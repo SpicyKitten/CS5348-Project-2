@@ -4,8 +4,8 @@
 CC = 		g++
 FLAGS = 	-Wall -Werror -std=c++11
 EXECUTABLE = 	mod-v6
-SRCS = 		$(wildcard ./*.cc)
-OBJS = 		$(SRCS:.cc=.o)
+SRCS = 		$(wildcard ./*.c++)
+OBJS = 		$(SRCS:.c++=.o)
 
 all:	test
 
@@ -26,7 +26,7 @@ clean:	--clean
 	@rm -f ./$(EXECUTABLE).exe
 	@echo "Removed executable"
 
-%.o:	%.cc
+%.o:	%.c++
 	@$(CC) $(FLAGS) -c $(SRCS) -o $(OBJS)
 
 .PHONY: clean
