@@ -2,7 +2,7 @@
 # Run "make clean" to delete the executable
 
 CC = 		g++
-FLAGS = 	-Wall -Werror -std=c++1y
+FLAGS = 	-Wall -Werror -std=c++11
 EXECUTABLE = 	mod-v6
 SRCS = 		$(wildcard ./*.cc)
 OBJS = 		$(SRCS:.cc=.o)
