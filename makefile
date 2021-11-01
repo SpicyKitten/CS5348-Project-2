@@ -2,10 +2,11 @@
 # Run "make clean" to delete the executable
 
 CC = 		g++
-FLAGS = 	-Wall -Werror -std=c++11
+FLAGS = 	-Wall -Werror -std=c++1y
 EXECUTABLE = 	mod-v6
-SRCS = 		$(wildcard ./*.c++)
-OBJS = 		$(SRCS:.c++=.o)
+SRCS = 		$(wildcard ./*.cpp)
+INCLUDES =  $(wildcard ./*.hpp)
+OBJS = 		$(SRCS:.cpp=.o)
 
 all:	test
 
@@ -26,8 +27,8 @@ clean:	--clean
 	@rm -f ./$(EXECUTABLE).exe
 	@echo "Removed executable"
 
-%.o:	%.c++
-	@$(CC) $(FLAGS) -c $(SRCS) -o $(OBJS)
+%.o:	%.cpp
+	@$(CC) $(FLAGS) -c $^ -o $@
 
-.PHONY: clean
+.PHONY: clean all edit test
 .PHONY: --clean
