@@ -44,7 +44,7 @@ unsigned long int INode::size()
 {
   return (0L | this->_size1) << 32 | this->_size2;
 }
-void INode::size(unsigned long int size)
+void INode::size(unsigned long long size)
 {
   this->_size1 = (unsigned int) ((size & 0xFFFFFFFF00000000L) >> 32);
   this->_size2 = (unsigned int) (size & 0x00000000FFFFFFFFL);

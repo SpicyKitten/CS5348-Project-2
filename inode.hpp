@@ -29,7 +29,7 @@ public:
     unsigned int gid();
     void gid(unsigned int gid);
     unsigned long int size();
-    void size(unsigned long int size);
+    void size(unsigned long long size);
     std::array<unsigned int, 9> addr();
     void addr(std::array<unsigned int, 9> addr);
     unsigned int actime();
