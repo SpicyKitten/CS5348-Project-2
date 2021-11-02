@@ -4,17 +4,18 @@
 #include <string>
 #include "inode.hpp"
 #include "filesys.hpp"
+using namespace std;
 
 int main(int argc, char* argv[])
 {
 	FileSystem fs;
-	std::string input;
-	std::string command;
-	std::vector<std::string> arguments;
+	string input;
+	string command;
+	vector<string> arguments;
 	while(true)
 	{
-		std::cout << "Waiting for input. Enter your command below:" << std::endl;
-		std::getline(std::cin, input);
+		cout << "Waiting for input. Enter your command below:" << endl;
+		getline(cin, input);
 		arguments.clear();
 		signed int start = 0;
 		signed int end = input.find(" ");
@@ -24,7 +25,7 @@ int main(int argc, char* argv[])
 		}
 		else if(end == -1)
 		{
-			std::cout << "Please enter a valid command!" << std::endl;
+			cout << "Please enter a valid command!" << endl;
 			continue;
 		}
 		command = input.substr(start, end-start);
@@ -34,10 +35,10 @@ int main(int argc, char* argv[])
 			end = input.find(" ", start);
 			arguments.push_back(input.substr(start, end-start));
 		}
-		std::cout << "Command: " << command << std::endl;
+		cout << "Command: " << command <<endl;
 		for(auto arg : arguments)
 		{
-			std::cout << "Argument: " << arg << std::endl;
+			cout << "Argument: " << arg << endl;
 		}
 		if(command == "openfs" && arguments.size() == 1)
 		{
@@ -45,18 +46,18 @@ int main(int argc, char* argv[])
 		}
 		else if(command == "initfs" && arguments.size() == 2)
 		{
-			auto totalBlocks = std::stoul(arguments[0]);
-			auto iNodeBlocks = std::stoul(arguments[1]);
+			auto totalBlocks = stoul(arguments[0]);
+			auto iNodeBlocks = stoul(arguments[1]);
 			fs.initfs(totalBlocks, iNodeBlocks);
 		}
 		else
 		{
-			std::cout << "Unrecognized command, please try again" << std::endl;
+			cout << "Unrecognized command, please try again" << endl;
 		}
 	}
-	std::unique_ptr<INode> inode{new INode()};
-	std::cout << *inode << std::endl;
-	std::cout << sizeof(inode) << std::endl;
-	std::cout << sizeof(*inode) << std::endl;
+	unique_ptr<INode> inode{new INode()};
+	cout << *inode << endl;
+	cout << sizeof(inode) << endl;
+	cout << sizeof(*inode) << endl;
 	return 0;
 }
