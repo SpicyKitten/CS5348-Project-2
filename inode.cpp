@@ -2,9 +2,12 @@
 
 std::ostream& operator<<(std::ostream &ostream, const INode &in)
 {
-  return ostream << "A(" << 1 << ")";
+  return ostream << "INode to string";
 }
-
+INode::~INode()
+{
+  std::cout << "~INode" << std::endl;
+}
 unsigned short INode::flags()
 {
   return this->_flags;

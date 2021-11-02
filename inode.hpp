@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <tuple>
+#include <array>
 
 struct INode
 {
@@ -18,6 +19,7 @@ private:
     unsigned int _modtime;
 public:
     friend std::ostream& operator<<(std::ostream &ostream, const INode &in);
+    ~INode();
     unsigned short flags();
     void flags(unsigned short flags);
     unsigned short nlinks();
