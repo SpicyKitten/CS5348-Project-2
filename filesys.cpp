@@ -24,8 +24,9 @@ void FileSystem::openfs(std::string filename)
     std::cout << "Executing openfs " << filename << std::endl;
     // create a file if it doesn't exist
     // open the file otherwise
-    auto fd = open(filename.c_str(), O_CREAT | O_RDWR);
-    write(fd, filename.c_str(), sizeof(filename.c_str()));
+    auto fd = open(filename.c_str(), O_CREAT | O_RDWR, S_IRWXU);
+    // this will overwrite the first filename.size() characters in the file
+    write(fd, filename.c_str(), filename.size());
     close(fd);
     std::cout << "Obtained file descriptor: " << fd << std::endl;
 }
