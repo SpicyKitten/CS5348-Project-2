@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 {
 	// using ModV6FileSystem::ArgCheck::expected;
 	using namespace ModV6FileSystem;
-	FileSystem fs;
+	std::unique_ptr<FileSystem> fs{new FileSystem()};
 	std::string input;
 	std::string command;
 	std::vector<std::string> arguments;
@@ -64,26 +64,26 @@ int main(int argc, char* argv[])
 		// updating the set of supported commands along the way
 		if(expected(supported, command, "q", arguments, 0))
 		{
-			fs.quit();
+			fs->quit();
 			break;
 		}
 		else if(expected(supported, command, "openfs", arguments, 1))
 		{
-			fs.openfs(arguments[0]);
+			fs->openfs(arguments[0]);
 		}
 		else if(expected(supported, command, "initfs", arguments, 2))
 		{
 			auto totalBlocks = std::stoul(arguments[0]);
 			auto iNodeBlocks = std::stoul(arguments[1]);
-			fs.initfs(totalBlocks, iNodeBlocks);
+			fs->initfs(totalBlocks, iNodeBlocks);
 		}
 		else if(supported.find(command) == supported.end())
 		{
 			std::cout << "Unrecognized command, please try again" << std::endl;
 		}
 	}
-	Directory directory;
-	SuperBlock superblock;
+	Directory directory{};
+	SuperBlock superblock{};
 	std::cout << "Directory inode: " << directory.inode() << std::endl;
 	std::cout << "Superblock isize: " << superblock.isize() << std::endl;
 	std::unique_ptr<INode> inode{new INode()};
