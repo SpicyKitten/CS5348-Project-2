@@ -2,9 +2,16 @@
 
 namespace ModV6FileSystem
 {
+    Block::Block(int32_t fd, uint32_t blockIdx) : _fd(fd), _blockIdx(blockIdx)
+    {
+        lseek(this->_fd, 1024 * this->_blockIdx, SEEK_SET);
+        read(this->_fd, this->_data.bytes.data(), 1024);
+    }
     Block::~Block()
     {
-        std::cout << "~Block" << std::endl;
+        lseek(this->_fd, 1024 * this->_blockIdx, SEEK_SET);
+        write(this->_fd, this->_data.bytes.data(), 1024);
+        std::cout << "~Block[" << this->_blockIdx << "]" << std::endl;
     }
     std::array<File, 32>& Block::asFiles() const
     {
@@ -28,9 +35,8 @@ namespace ModV6FileSystem
         const auto* data_integer_ptr = reinterpret_cast<const std::array<uint32_t, 256>*>(data_byte_ptr);
         return const_cast<std::array<uint32_t, 256>&>(*data_integer_ptr);
     }
-    SuperBlock Block::asSuperBlock() const
+    uint32_t Block::index() const
     {
-        SuperBlock superblock{const_cast<Block*>(this)};
-        return superblock;
+        return this->_blockIdx;
     }
 }

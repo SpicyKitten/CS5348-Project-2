@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <iostream>
+#include <unistd.h>
 #include "inode.hpp"
 #include "file.hpp"
 #include "superblock.hpp"
@@ -21,7 +22,10 @@ namespace ModV6FileSystem
             std::array<uint8_t, 1024> bytes;
         };
         Data _data;
+        int32_t _fd;
+        uint32_t _blockIdx;
     public:
+        Block(int32_t fd, uint32_t blockIdx);
         ~Block();
 
         std::array<File, 32>& asFiles() const;
@@ -30,6 +34,6 @@ namespace ModV6FileSystem
         // as indices for free data blocks 
         // in free data block linked list
         std::array<unsigned int, 256>& asIntegers() const;
-        SuperBlock asSuperBlock() const;
+        uint32_t index() const;
     };
 }

@@ -2,34 +2,35 @@
 
 namespace ModV6FileSystem
 {
-    SuperBlock::SuperBlock(Block* block) : SuperBlock(*block)
+    SuperBlock::SuperBlock(std::shared_ptr<Block> block) : 
+        _data(*reinterpret_cast<Data*>(block->asBytes().data())), _block(block)
     {
     }
-    SuperBlock::SuperBlock(Block& block) :
-        _data(*reinterpret_cast<Data*>(block.asBytes().data()))
+    SuperBlock::~SuperBlock()
     {
+        std::cout << "~SuperBlock" << std::endl;
     }
-    size_t SuperBlock::isize() const
+    uint32_t SuperBlock::isize() const
     {
         return this->_data.isize;
     }
-    void SuperBlock::isize(size_t isize)
+    void SuperBlock::isize(uint32_t isize)
     {
         this->_data.isize = isize;
     }
-    size_t SuperBlock::fsize() const
+    uint32_t SuperBlock::fsize() const
     {
         return this->_data.fsize;
     }
-    void SuperBlock::fsize(size_t fsize)
+    void SuperBlock::fsize(uint32_t fsize)
     {
         this->_data.fsize = fsize;
     }
-    size_t SuperBlock::nfree() const
+    uint32_t SuperBlock::nfree() const
     {
         return this->_data.nfree;
     }
-    void SuperBlock::nfree(size_t nfree)
+    void SuperBlock::nfree(uint32_t nfree)
     {
         this->_data.nfree = nfree;
     }
@@ -48,6 +49,14 @@ namespace ModV6FileSystem
     void SuperBlock::flock(char flock)
     {
         this->_data.flock = flock;
+    }
+    char SuperBlock::ilock() const
+    {
+        return this->_data.ilock;
+    }
+    void SuperBlock::ilock(char ilock)
+    {
+        this->_data.ilock = ilock;
     }
     char SuperBlock::fmod() const
     {
