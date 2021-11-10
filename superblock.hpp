@@ -1,8 +1,11 @@
 #pragma once
 #include <array>
+#include "block.hpp"
 
 namespace ModV6FileSystem
 {
+    struct Block;
+
     struct SuperBlock
     {
     private:
@@ -17,9 +20,11 @@ namespace ModV6FileSystem
             char fmod;
             unsigned int time;
         };
-        Data _data;
+        Data& _data;
 
     public:
+        SuperBlock(Block* block);
+        SuperBlock(Block& block);
         size_t isize() const;
         void isize(size_t isize);
         size_t fsize() const;

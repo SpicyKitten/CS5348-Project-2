@@ -6,7 +6,8 @@
 #include "inode.hpp"
 #include "filesys.hpp"
 #include "superblock.hpp"
-#include "directory.hpp"
+#include "file.hpp"
+#include "block.hpp"
 
 namespace ModV6FileSystem
 {
@@ -82,13 +83,27 @@ int main(int argc, char* argv[])
 			std::cout << "Unrecognized command, please try again" << std::endl;
 		}
 	}
-	Directory directory{};
-	SuperBlock superblock{};
-	std::cout << "Directory inode: " << directory.inode() << std::endl;
-	std::cout << "Superblock isize: " << superblock.isize() << std::endl;
+	File file{};
+	std::cout << "File inode: " << file.inode() << std::endl;
 	std::unique_ptr<INode> inode{new INode()};
 	std::cout << *inode << std::endl;
 	std::cout << sizeof(inode) << std::endl;
 	std::cout << sizeof(*inode) << std::endl;
+	Block block{};
+	block.asFiles();
+	std::cout << "File: " << file << std::endl;
+	std::cout << "Block size: " << sizeof(block.asFiles()) << " bytes" << std::endl;
+	std::cout << "Block size: " << sizeof(block.asINodes()) << " bytes" << std::endl;
+	std::cout << "Block size: " << sizeof(block.asBytes()) << " bytes" << std::endl;
+	std::cout << "Block size: " << sizeof(block.asIntegers()) << " bytes" << std::endl;
+	INode& node = block.asINodes()[0];
+	// uid = f i l e in binary
+	// gid = n a m e in binary
+	node.uid(0b01000110011010010110110001100101ul);
+	node.gid(0b01001110011000010110110101100101ul);
+	// prints differently because of endian-ness
+	std::cout << "Reinterpreted INode as File: " << block.asFiles()[0] << std::endl;
+	SuperBlock superblock{block};
+	
 	return 0;
 }

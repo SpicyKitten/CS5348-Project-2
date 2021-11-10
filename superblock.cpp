@@ -2,6 +2,13 @@
 
 namespace ModV6FileSystem
 {
+    SuperBlock::SuperBlock(Block* block) : SuperBlock(*block)
+    {
+    }
+    SuperBlock::SuperBlock(Block& block) :
+        _data(*reinterpret_cast<Data*>(block.asBytes().data()))
+    {
+    }
     size_t SuperBlock::isize() const
     {
         return this->_data.isize;
