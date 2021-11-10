@@ -6,28 +6,33 @@ namespace ModV6FileSystem
     struct SuperBlock
     {
     private:
-        size_t _isize;
-        size_t _fsize;
-        size_t _nfree;
-        std::array<unsigned int, 251> _free;
-        char _flock;
-        char _fmod;
-        unsigned int _time;
+        struct Data
+        {
+        public:
+            size_t isize;
+            size_t fsize;
+            size_t nfree;
+            std::array<unsigned int, 251> free;
+            char flock;
+            char fmod;
+            unsigned int time;
+        };
+        Data _data;
 
     public:
-        size_t isize();
+        size_t isize() const;
         void isize(size_t isize);
-        size_t fsize();
+        size_t fsize() const;
         void fsize(size_t fsize);
-        size_t nfree();
+        size_t nfree() const;
         void nfree(size_t nfree);
-        std::array<unsigned int, 251> free();
+        std::array<unsigned int, 251> free() const;
         void free(std::array<unsigned int, 251> free);
-        char flock();
+        char flock() const;
         void flock(char flock);
-        char fmod();
+        char fmod() const;
         void fmod(char fmod);
-        unsigned int time();
+        unsigned int time() const;
         void time(unsigned int time);
     };
 }

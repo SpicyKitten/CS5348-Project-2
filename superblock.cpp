@@ -2,60 +2,60 @@
 
 namespace ModV6FileSystem
 {
-    size_t SuperBlock::isize()
+    size_t SuperBlock::isize() const
     {
-        return this->_isize;
+        return this->_data.isize;
     }
     void SuperBlock::isize(size_t isize)
     {
-        this->_isize = isize;
+        this->_data.isize = isize;
     }
-    size_t SuperBlock::fsize()
+    size_t SuperBlock::fsize() const
     {
-        return this->_fsize;
+        return this->_data.fsize;
     }
     void SuperBlock::fsize(size_t fsize)
     {
-        this->_fsize = fsize;
+        this->_data.fsize = fsize;
     }
-    size_t SuperBlock::nfree()
+    size_t SuperBlock::nfree() const
     {
-        return this->_nfree;
+        return this->_data.nfree;
     }
     void SuperBlock::nfree(size_t nfree)
     {
-        this->_nfree = nfree;
+        this->_data.nfree = nfree;
     }
-    std::array<unsigned int, 251> SuperBlock::free()
+    std::array<unsigned int, 251> SuperBlock::free() const
     {
-        return this->_free;
+        return this->_data.free;
     }
     void SuperBlock::free(std::array<unsigned int, 251> free)
     {
-        this->_free = free;
+        this->_data.free = free;
     }
-    char SuperBlock::flock()
+    char SuperBlock::flock() const
     {
-        return this->_flock;
+        return this->_data.flock;
     }
     void SuperBlock::flock(char flock)
     {
-        this->_flock = flock;
+        this->_data.flock = flock;
     }
-    char SuperBlock::fmod()
+    char SuperBlock::fmod() const
     {
-        return this->_fmod;
+        return this->_data.fmod;
     }
     void SuperBlock::fmod(char fmod)
     {
-        this->_fmod = fmod;
+        this->_data.fmod = fmod;
     }
-    unsigned int SuperBlock::time()
+    unsigned int SuperBlock::time() const
     {
-        return this->_time;
+        return this->_data.time;
     }
     void SuperBlock::time(unsigned int time)
     {
-        this->_time = time;
+        this->_data.time = time;
     }
 }

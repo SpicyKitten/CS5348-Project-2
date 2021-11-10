@@ -9,7 +9,7 @@
 
 namespace ModV6FileSystem
 {
-    class FileSystem
+    struct FileSystem
     {
     private:
         std::vector<std::unique_ptr<INode>> _inodes;

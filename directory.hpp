@@ -6,8 +6,13 @@ namespace ModV6FileSystem
     struct Directory
     {
     private:
-        unsigned int _inode;
-        std::array<char, 28> _filename;
+        struct Data
+        {
+        public:
+            unsigned int inode;
+            std::array<char, 28> filename;
+        };
+        Data _data;
 
     public:
         unsigned int inode();
