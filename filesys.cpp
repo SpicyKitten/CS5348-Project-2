@@ -339,8 +339,6 @@ namespace ModV6FileSystem
         {
             std::cout << "This should be impossible!" << std::endl;
         }
-        // open the file otherwise
-        
         // this will overwrite the first filename.size() characters in the file
         // write(fd, filename.c_str(), filename.size());
         

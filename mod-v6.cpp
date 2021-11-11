@@ -9,6 +9,26 @@
 #include "file.hpp"
 #include "block.hpp"
 
+/**
+ * Group members:
+ * Avilash Rath (asr210008)
+ * 		Contributions: Programming
+ * Sai Tatireddy (sxt190086)
+ * 		Contributions: Planning + Initializing free linked list
+ * Haowei Liu (hxl210017)
+ * 		Contributions: Planning
+ * 
+ * How to run our code:
+ * 		unzip whatever needs to be unzipped
+ * 		put it all in a directory
+ * 		cd into the directory from the command line
+ * 		run the command "make clean test"
+ * 		input openfs 	command such as >openfs ./fs
+ * 		input initfs 	command such as >initfs 1000 100
+ * 		input q 		command such as >q
+ * 
+ * Be wary - bad things will happen if you openfs a file and don't initfs it
+ */
 namespace ModV6FileSystem
 {
 	inline namespace ArgCheck
