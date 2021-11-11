@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -7,6 +8,7 @@
 #include <unistd.h>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include "inode.hpp"
 #include "block.hpp"
 
@@ -31,9 +33,16 @@ namespace ModV6FileSystem
 
         void reset();
         void setDimensions(uint32_t totalBlocks, uint32_t iNodeBlocks);
-
+        std::shared_ptr<Block> getBlock(uint32_t blockIdx);
+        std::tuple<std::shared_ptr<Block>, INode&> getINode(uint32_t iNodeIdx);
+        void freeDataBlock(SuperBlock& superblock, uint32_t blockIdx);
+        uint32_t allocateDataBlock(SuperBlock& superblock);
+        uint32_t allocateINode();
+        void initializeFreeList(SuperBlock& superblock);
+        void initializeINodes();
+        void initializeRoot();
+        std::array<char, 28> filenameToArray(std::string filename);
     public:
-        std::shared_ptr<Block> getBlock(uint32_t);
         FileSystem();
         ~FileSystem();
         void quit();

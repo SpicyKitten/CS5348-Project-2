@@ -33,7 +33,7 @@ namespace ModV6FileSystem
         std::array<uint8_t, 1024>& asBytes() const;
         // as indices for free data blocks 
         // in free data block linked list
-        std::array<unsigned int, 256>& asIntegers() const;
+        std::array<uint32_t, 256>& asIntegers() const;
         uint32_t index() const;
     };
 }

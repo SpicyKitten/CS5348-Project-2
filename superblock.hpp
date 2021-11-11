@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <memory>
+#include <string>
 #include "block.hpp"
 
 namespace ModV6FileSystem
@@ -26,6 +27,7 @@ namespace ModV6FileSystem
         std::shared_ptr<Block> _block;
 
     public:
+        friend std::ostream &operator<<(std::ostream &ostream, const SuperBlock& in);
         SuperBlock(std::shared_ptr<Block> block);
         ~SuperBlock();
         uint32_t isize() const;

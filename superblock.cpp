@@ -2,6 +2,21 @@
 
 namespace ModV6FileSystem
 {
+    std::ostream &operator<<(std::ostream &ostream, const SuperBlock& in)
+    {
+        std::string freeStr = "[";
+        std::string prefix = "";
+        for(auto num : in.free())
+        {
+            freeStr = freeStr + prefix + std::to_string(num);
+            prefix = ", ";
+        }
+        freeStr += "]";
+        return ostream << "SuperBlock[isize=" << in.isize() << ", fsize=" << in.fsize()
+            << ", nfree=" << in.nfree() << ", free=" << freeStr << ", flock"
+            << in.flock() << ", ilock=" << in.ilock() << ", fmod=" << in.fmod()
+            << ", time=" << in.time() << "]";
+    }
     SuperBlock::SuperBlock(std::shared_ptr<Block> block) : 
         _data(*reinterpret_cast<Data*>(block->asBytes().data())), _block(block)
     {
