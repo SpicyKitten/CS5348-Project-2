@@ -30,6 +30,7 @@ namespace ModV6FileSystem
         friend std::ostream &operator<<(std::ostream &ostream, const SuperBlock& in);
         SuperBlock(std::shared_ptr<Block> block);
         ~SuperBlock();
+        
         uint32_t isize() const;
         void isize(uint32_t isize);
         uint32_t fsize() const;

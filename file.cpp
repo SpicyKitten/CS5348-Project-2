@@ -14,6 +14,21 @@ namespace ModV6FileSystem
         return ostream << "File[inode=" << in.inode()
         << ", filename=" << filename << "]";
     }
+    File::File(std::shared_ptr<Block> block_ptr, uint32_t offset) : 
+        _data(
+            const_cast<std::array<Data, 32>&>(
+                *reinterpret_cast<const std::array<Data, 32>*>(
+                    block_ptr->asBytes().data()
+                )
+            )[offset]
+        ),
+        _block(block_ptr)
+    {
+    }
+    File::~File()
+    {
+        std::cout << "~File" << std::endl;
+    }
     uint32_t File::inode() const
     {
         return this->_data.inode;

@@ -11,6 +11,8 @@
 namespace ModV6FileSystem
 {
     struct SuperBlock;
+    struct File;
+    struct INode;
 
     // size is 1024 bytes
     struct Block
@@ -27,9 +29,7 @@ namespace ModV6FileSystem
     public:
         Block(int32_t fd, uint32_t blockIdx);
         ~Block();
-
-        std::array<File, 32>& asFiles() const;
-        std::array<INode, 16>& asINodes() const;
+        
         std::array<uint8_t, 1024>& asBytes() const;
         // as indices for free data blocks 
         // in free data block linked list

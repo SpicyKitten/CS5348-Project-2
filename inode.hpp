@@ -3,9 +3,13 @@
 #include <tuple>
 #include <array>
 #include <bitset>
+#include <memory>
+#include "block.hpp"
 
 namespace ModV6FileSystem
 {
+    struct Block;
+
     struct INode
     {
     private:
@@ -24,11 +28,14 @@ namespace ModV6FileSystem
             uint32_t actime;
             uint32_t modtime;
         };
-        Data _data;
+        Data& _data;
+        std::shared_ptr<Block> _block;
 
     public:
         friend std::ostream &operator<<(std::ostream &ostream, const INode& in);
+        INode(std::shared_ptr<Block> block_ptr, uint32_t offset);
         ~INode();
+        
         uint16_t flags() const;
         void flags(uint16_t flags);
         uint16_t nlinks() const;

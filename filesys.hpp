@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <string>
 #include <functional>
 #include <iostream>
@@ -17,8 +18,7 @@ namespace ModV6FileSystem
     struct FileSystem
     {
     private:
-        std::vector<std::unique_ptr<INode>> _inodes;
-        std::vector<std::shared_ptr<Block>> _blocks;
+        std::vector<std::weak_ptr<Block>> _blocks;
         int32_t _fd;
         uint32_t TOTAL_BLOCKS;
         uint32_t BOOT_INFO_BLOCKS;
@@ -34,17 +34,20 @@ namespace ModV6FileSystem
         void reset();
         void setDimensions(uint32_t totalBlocks, uint32_t iNodeBlocks);
         std::shared_ptr<Block> getBlock(uint32_t blockIdx);
-        std::tuple<std::shared_ptr<Block>, INode&> getINode(uint32_t iNodeIdx);
-        void freeDataBlock(SuperBlock& superblock, uint32_t blockIdx);
-        uint32_t allocateDataBlock(SuperBlock& superblock);
+        std::shared_ptr<INode> getINode(uint32_t iNodeIdx);
+        std::array<std::shared_ptr<File>, 32> getFiles(uint32_t blockIdx);
+        std::shared_ptr<SuperBlock> getSuperBlock();
+        void freeDataBlock(std::shared_ptr<SuperBlock> superblock_ptr, uint32_t blockIdx);
+        uint32_t allocateDataBlock(std::shared_ptr<SuperBlock> superblock_ptr);
         uint32_t allocateINode();
-        void initializeFreeList(SuperBlock& superblock);
+        void initializeFreeList(std::shared_ptr<SuperBlock> superblock_ptr);
         void initializeINodes();
         void initializeRoot();
         std::array<char, 28> filenameToArray(std::string filename);
     public:
         FileSystem();
         ~FileSystem();
+        
         void quit();
         void openfs(const std::string& filename);
         void initfs(uint32_t totalBlocks, uint32_t iNodeBlocks);

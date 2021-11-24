@@ -98,11 +98,30 @@ int main(int argc, char* argv[])
 			auto iNodeBlocks = std::stoul(arguments[1]);
 			fs->initfs(totalBlocks, iNodeBlocks);
 		}
+		else if(expected(supported, command, "help", arguments, 0))
+		{
+			std::cout << "Supported commands:" << std::endl;
+			std::cout << "	openfs <filename>" << std::endl;
+			std::cout << "	initfs <totalBlocks> <iNodeBlocks>" << std::endl;
+		}
 		else if(supported.find(command) == supported.end())
 		{
 			std::cout << "Unrecognized command, please try again" << std::endl;
 		}
 	}
+	// fs->openfs("./fs");
+	// std::shared_ptr<Block> block = fs->getBlock(0);
+	// std::array<uint8_t, 1024>& bytes = block->asBytes();
+	// for(auto i = 0; i < 1024; ++i)
+	// {
+	// 	bytes[i] = i/64;
+	// }
+	// for(auto i = 0; i < 1024/64; ++i)
+	// {
+	// 	inode->flags(0xFFFF);
+	// 	std::cout << "INode " << std::to_string(i) << ": " << *inode << std::endl;
+	// }
+	// fs = std::unique_ptr<FileSystem>{nullptr};
 	// File file{};
 	// std::cout << "File inode: " << file.inode() << std::endl;
 	// std::unique_ptr<INode> inode{new INode()};

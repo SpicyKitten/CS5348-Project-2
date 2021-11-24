@@ -2,9 +2,13 @@
 #include <array>
 #include <iostream>
 #include <string>
+#include <memory>
+#include "block.hpp"
 
 namespace ModV6FileSystem
 {
+    struct Block;
+
     struct File
     {
     private:
@@ -14,10 +18,14 @@ namespace ModV6FileSystem
             uint32_t inode;
             std::array<char, 28> filename;
         };
-        Data _data;
+        Data& _data;
+        std::shared_ptr<Block> _block;
 
     public:
         friend std::ostream &operator<<(std::ostream &ostream, const File& in);
+        File(std::shared_ptr<Block> block, uint32_t offset);
+        ~File();
+        
         uint32_t inode() const;
         void inode(uint32_t inode);
         std::array<char, 28> filename() const;

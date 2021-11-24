@@ -5,7 +5,18 @@ namespace ModV6FileSystem
     std::ostream &operator<<(std::ostream &ostream, const INode& in)
     {
         return ostream << "INode[flags=" << std::bitset<16>(in.flags())
-        << ", size=" << in.size() << "]";
+        << ", nlinks=" << std::bitset<16>(in.nlinks()) << ", size=" << in.size() << "]";
+    }
+    INode::INode(std::shared_ptr<Block> block_ptr, uint32_t offset) : 
+        _data(
+            const_cast<std::array<Data, 16>&>(
+                *reinterpret_cast<const std::array<Data, 16>*>(
+                    block_ptr->asBytes().data()
+                )
+            )[offset]
+        ),
+        _block(block_ptr)
+    {
     }
     INode::~INode()
     {
