@@ -28,6 +28,7 @@
  * 		input q 		command such as >q
  * 
  * Be wary - bad things will happen if you openfs a file and don't initfs it
+ * Make sure you have done initfs on the file system at least once before expecting anything else to work
  */
 namespace ModV6FileSystem
 {
@@ -117,6 +118,10 @@ int main(int argc, char* argv[])
 		else if(expected(supported, command, "cd", arguments, 1))
 		{
 			fs->cd(arguments[0]);
+		}
+		else if(expected(supported, command, "pwd", arguments, 0))
+		{
+			fs->pwd();
 		}
 		else if(expected(supported, command, "help", arguments, 0))
 		{

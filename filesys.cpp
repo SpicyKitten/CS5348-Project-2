@@ -199,7 +199,7 @@ namespace ModV6FileSystem
                 return idx;
             }
         }
-        throw std::runtime_error("Out of memory: cannot allocate any more data blocks!");
+        throw std::runtime_error("Out of memory: cannot allocate any more i-nodes!");
     }
     void FileSystem::initializeFreeList(std::shared_ptr<SuperBlock> superblock_ptr)
     {
@@ -252,10 +252,16 @@ namespace ModV6FileSystem
         // inode.addr();
         inode_ptr->actime(0);
         inode_ptr->modtime(0);
-        std::cout << "INode " << iNodeIdx << ": " << *inode_ptr << std::endl;
         
         std::shared_ptr<SuperBlock> superblock_ptr = this->getSuperBlock();
         auto blockIdx = this->allocateDataBlock(superblock_ptr);
+        // update allocated block for file
+        auto blocks = inode_ptr->addr();
+        blocks[0] = blockIdx;
+        inode_ptr->addr(blocks);
+
+        std::cout << "INode " << iNodeIdx << ": " << *inode_ptr << std::endl;
+
         std::array<std::shared_ptr<File>, 32> file_ptrs = this->getFiles(blockIdx);
         std::shared_ptr<File> self = file_ptrs[0];
         self->inode(iNodeIdx);
@@ -279,6 +285,110 @@ namespace ModV6FileSystem
         std::fill(array.begin(), array.end(), 0);
         std::copy(filename.begin(), filename.end(), array.begin());
         return array;
+    }
+    std::string FileSystem::getExtendedFilename(std::string workingDirectory, std::string filename)
+    {
+        std::string slash{"/"};
+        std::string target = filename;
+        if(target.size() > 0 && target[target.size() - 1] != slash[0])
+        {
+            target += slash;
+        }
+        if(target[0] != slash[0])
+        {
+            target = this->_working_directory + target;
+        }
+        return target;
+    }
+    std::vector<std::string> FileSystem::parseFilename(std::string filename)
+    {
+        std::vector<std::string> path;
+        signed int start = 0;
+		signed int end = filename.find("/");
+		std::string root = filename.substr(start, end-start);
+		while(end != -1)
+		{
+			start = end + 1;
+			end = filename.find("/", start);
+			path.push_back(filename.substr(start, end-start));
+		}
+        if(root.size() != 0)
+        {
+            throw std::invalid_argument("Parsed non-rooted filename: " + filename);
+        }
+        for(auto component : path)
+        {
+            if(component.size() > 28)
+            {
+                throw std::invalid_argument("Parsed excessively long component \"" +
+                    component + "\" from filename: " + filename);
+            }
+        }
+        return path;
+    }
+    std::vector<uint32_t> FileSystem::getINodesForPath(std::vector<std::string> path)
+    {
+        std::vector<uint32_t> result;
+        uint32_t currentIdx = 0;
+        std::shared_ptr<INode> inode_ptr;
+        for(auto element : path)
+        {
+            result.push_back(currentIdx);
+            if(element.size() > 0)
+            {
+                inode_ptr = this->getINode(currentIdx);
+                if(inode_ptr->filetype() == FileType::REGULAR)
+                {
+                    break;
+                }
+                else if(inode_ptr->filetype() == FileType::DIRECTORY)
+                {
+                    std::vector<uint32_t> blockIdxs = this->getBlocksForINode(inode_ptr);
+                    for(auto blockIdx : blockIdxs)
+                    {
+                        std::array<std::shared_ptr<File>, 32> files = this->getFiles(blockIdx);
+                        for(auto file_ptr : files)
+                        {
+                            auto filename_chars = file_ptr->filename();
+                            std::string filename{filename_chars.begin(), filename_chars.end()};
+                            // filename.erase(filename.find("\0"));
+                            std::cout << "filename=" << filename 
+                                << ", size=" << filename.size() 
+                                << ", index=" << filename.find('\0')
+                                << std::endl;
+                            std::cout << *file_ptr << std::endl;
+                            
+                            // std::cout << "Contains file: " << filename << std::endl;
+                        }
+                    }
+                    std::cout << "INode: " << *inode_ptr << std::endl;
+                }
+                else
+                {
+                    throw std::runtime_error("Unexpectedly found non-regular non-directory file!");
+                }
+            }
+        }
+        return result;
+    }
+    std::vector<uint32_t> FileSystem::getBlocksForINode(std::shared_ptr<INode> inode_ptr)
+    {
+        std::vector<uint32_t> result;
+        if(inode_ptr->filesize() == FileSize::SMALL)
+        {
+            for(uint32_t block_address : inode_ptr->addr())
+            {
+                if(block_address != 0)
+                {
+                    result.push_back(block_address);
+                }
+            }
+        }
+        else
+        {
+            throw std::runtime_error("Medium/Large/Massive files in i-nodes not supported yet!");
+        }
+        return result;
     }
     void FileSystem::quit()
     {
@@ -424,6 +534,29 @@ namespace ModV6FileSystem
             std::cout << "openfs has not been called successfully, aborting cd" << std::endl;
             return;
         }
+        auto target = this->getExtendedFilename(this->_working_directory, innerFilename);
+        std::vector<std::string> path = this->parseFilename(target);
+        for(auto component : path)
+        {
+            std::cout << "Path component: " << component << std::endl;
+        }
+        std::vector<uint32_t> inodes = this->getINodesForPath(path);
+        for(auto inode : inodes)
+        {
+            std::cout << "INodes for path: " << std::to_string(inode) << std::endl;
+        }
+        std::cout << "Moving to directory: " << target << std::endl;
+        this->_working_directory = target;
         this->_blocks.clear();
+    }
+    void FileSystem::pwd()
+    {
+        std::cout << "Executing pwd" << std::endl;
+        if(this->_fd == -1)
+        {
+            std::cout << "openfs has not been called successfully, aborting pwd" << std::endl;
+            return;
+        }
+        std::cout << this->_working_directory << std::endl;
     }
 }

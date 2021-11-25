@@ -45,6 +45,10 @@ namespace ModV6FileSystem
         void initializeINodes();
         void initializeRoot();
         std::array<char, 28> filenameToArray(std::string filename);
+        std::string getExtendedFilename(std::string workingDirectory, std::string filename);
+        std::vector<std::string> parseFilename(std::string filename);
+        std::vector<uint32_t> getINodesForPath(std::vector<std::string> path);
+        std::vector<uint32_t> getBlocksForINode(std::shared_ptr<INode> inode_ptr);
     public:
         FileSystem();
         ~FileSystem();
@@ -57,5 +61,6 @@ namespace ModV6FileSystem
         void rm(const std::string& innerFilename);
         void mkdir(const std::string& innerFilename);
         void cd(const std::string& innerFilename);
+        void pwd();
     };
 }
