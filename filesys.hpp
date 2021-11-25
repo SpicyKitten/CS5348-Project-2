@@ -17,7 +17,7 @@ namespace ModV6FileSystem
 {
     struct FileSystem
     {
-    private:
+    public:
         std::vector<std::weak_ptr<Block>> _blocks;
         int32_t _fd;
         uint32_t TOTAL_BLOCKS;
@@ -51,5 +51,10 @@ namespace ModV6FileSystem
         void quit();
         void openfs(const std::string& filename);
         void initfs(uint32_t totalBlocks, uint32_t iNodeBlocks);
+        void cpin(const std::string& outerFilename, const std::string& innerFilename);
+        void cpout(const std::string& innerFilename, const std::string& outerFilename);
+        void rm(const std::string& innerFilename);
+        void mkdir(const std::string& innerFilename);
+        void cd(const std::string& innerFilename);
     };
 }

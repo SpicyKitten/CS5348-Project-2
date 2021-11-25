@@ -98,6 +98,22 @@ int main(int argc, char* argv[])
 			auto iNodeBlocks = std::stoul(arguments[1]);
 			fs->initfs(totalBlocks, iNodeBlocks);
 		}
+		else if(expected(supported, command, "cpin", arguments, 2))
+		{
+			fs->cpin(arguments[0], arguments[1]);
+		}
+		else if(expected(supported, command, "cpout", arguments, 2))
+		{
+			fs->cpout(arguments[0], arguments[1]);
+		}
+		else if(expected(supported, command, "rm", arguments, 1))
+		{
+			fs->rm(arguments[0]);
+		}
+		else if(expected(supported, command, "mkdir", arguments, 1))
+		{
+			fs->mkdir(arguments[0]);
+		}
 		else if(expected(supported, command, "help", arguments, 0))
 		{
 			std::cout << "Supported commands:" << std::endl;
@@ -110,7 +126,12 @@ int main(int argc, char* argv[])
 		}
 	}
 	// fs->openfs("./fs");
-	// std::shared_ptr<Block> block = fs->getBlock(0);
+	// std::shared_ptr<INode> inode_ptr = fs->getINode(0);
+	// inode_ptr->allocated(true);
+	// inode_ptr->filetype(FileType::DIRECTORY);
+	// inode_ptr->filesize(FileSize::SMALL);
+	// std::cout << "INode: " << *inode_ptr << std::endl;
+	// fs->quit();
 	// std::array<uint8_t, 1024>& bytes = block->asBytes();
 	// for(auto i = 0; i < 1024; ++i)
 	// {

@@ -4,7 +4,12 @@
 #include <array>
 #include <bitset>
 #include <memory>
+#include <stdexcept>
+#include <string>
 #include "block.hpp"
+#include "filetype.hpp"
+#include "filetype.hpp"
+#include "filesize.hpp"
 
 namespace ModV6FileSystem
 {
@@ -35,6 +40,13 @@ namespace ModV6FileSystem
         friend std::ostream &operator<<(std::ostream &ostream, const INode& in);
         INode(std::shared_ptr<Block> block_ptr, uint32_t offset);
         ~INode();
+
+        bool allocated() const;
+        void allocated(bool allocated);
+        FileType filetype() const;
+        void filetype(FileType filetype);
+        FileSize filesize() const;
+        void filesize(FileSize filesize);
         
         uint16_t flags() const;
         void flags(uint16_t flags);

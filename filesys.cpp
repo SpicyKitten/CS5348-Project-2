@@ -187,7 +187,8 @@ namespace ModV6FileSystem
     {
         const auto INODES_PER_BLOCK = 1024 / 64;
         const auto ALLOCATED_FLAG = 0b1000000000000000;
-        for(uint32_t idx = 0; idx < this->INODE_BLOCKS * INODES_PER_BLOCK; idx++)
+        const auto TOTAL_INODES = this->INODE_BLOCKS * INODES_PER_BLOCK;
+        for(uint32_t idx = 0; idx < TOTAL_INODES; idx++)
         {
             std::shared_ptr<INode> inode_ptr = this->getINode(idx);
             auto flags = inode_ptr->flags();
@@ -282,6 +283,44 @@ namespace ModV6FileSystem
     {
         std::cout << "mod-v6 file system shutting down gracefully" << std::endl;
     }
+    void FileSystem::openfs(const std::string& filename)
+    {
+        std::cout << "Executing openfs " << filename << std::endl;
+        auto existed_before = access(filename.c_str(), F_OK) != -1;
+        auto fd = open(filename.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+        auto accessible = fd != -1;
+        auto exists = access(filename.c_str(), F_OK) != -1;
+        if(!exists)
+        {
+            std::cout << "Did not open FileSystem at " << filename 
+                << " since file could not be created" << std::endl;
+        }
+        else if(!accessible)
+        {
+            std::cout << "Did not open FileSystem at " << filename 
+                << " since file could not be accessed" << std::endl;
+        }
+        else if(!existed_before)
+        {
+            reset();
+            this->_fd = fd;
+        }
+        else if(existed_before)
+        {
+            reset();
+            this->_fd = fd;
+            std::shared_ptr<SuperBlock> superblock_ptr = this->getSuperBlock();
+            this->setDimensions(superblock_ptr->fsize(), superblock_ptr->isize());
+        }
+        else
+        {
+            std::cout << "This should be impossible!" << std::endl;
+        }
+        // this will overwrite the first filename.size() characters in the file
+        // write(fd, filename.c_str(), filename.size());
+        
+        std::cout << "Obtained file descriptor: " << fd << std::endl;
+    }
     void FileSystem::initfs(uint32_t totalBlocks, uint32_t iNodeBlocks)
     {
         std::cout << "Executing initfs " << totalBlocks << " " << iNodeBlocks << std::endl;
@@ -336,42 +375,24 @@ namespace ModV6FileSystem
         this->initializeRoot();
         this->_blocks.clear();
     }
-    void FileSystem::openfs(const std::string& filename)
+    void FileSystem::cpin(const std::string& outerFilename, const std::string& innerFilename)
     {
-        std::cout << "Executing openfs " << filename << std::endl;
-        auto existed_before = access(filename.c_str(), F_OK) != -1;
-        auto fd = open(filename.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-        auto accessible = fd != -1;
-        auto exists = access(filename.c_str(), F_OK) != -1;
-        if(!exists)
-        {
-            std::cout << "Did not open FileSystem at " << filename 
-                << " since file could not be created" << std::endl;
-        }
-        else if(!accessible)
-        {
-            std::cout << "Did not open FileSystem at " << filename 
-                << " since file could not be accessed" << std::endl;
-        }
-        else if(!existed_before)
-        {
-            reset();
-            this->_fd = fd;
-        }
-        else if(existed_before)
-        {
-            reset();
-            this->_fd = fd;
-            std::shared_ptr<SuperBlock> superblock_ptr = this->getSuperBlock();
-            this->setDimensions(superblock_ptr->fsize(), superblock_ptr->isize());
-        }
-        else
-        {
-            std::cout << "This should be impossible!" << std::endl;
-        }
-        // this will overwrite the first filename.size() characters in the file
-        // write(fd, filename.c_str(), filename.size());
-        
-        std::cout << "Obtained file descriptor: " << fd << std::endl;
+        std::cout << "Executing cpin " << outerFilename << " " << innerFilename << std::endl;
+    }
+    void FileSystem::cpout(const std::string& innerFilename, const std::string& outerFilename)
+    {
+        std::cout << "Executing cpout " << innerFilename << " " << outerFilename << std::endl;
+    }
+    void FileSystem::rm(const std::string& innerFilename)
+    {
+        std::cout << "Executing rm " << innerFilename << std::endl;
+    }
+    void FileSystem::mkdir(const std::string& innerFilename)
+    {
+        std::cout << "Executing mkdir " << innerFilename << std::endl;
+    }
+    void FileSystem::cd(const std::string& innerFilename)
+    {
+        std::cout << "Executing cd " << innerFilename << std::endl;
     }
 }
