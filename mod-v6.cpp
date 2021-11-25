@@ -114,6 +114,10 @@ int main(int argc, char* argv[])
 		{
 			fs->mkdir(arguments[0]);
 		}
+		else if(expected(supported, command, "cd", arguments, 1))
+		{
+			fs->cd(arguments[0]);
+		}
 		else if(expected(supported, command, "help", arguments, 0))
 		{
 			std::cout << "Supported commands:" << std::endl;

@@ -19,6 +19,7 @@ namespace ModV6FileSystem
             close(this->_fd);
         }
         this->_fd = -1;
+        this->_working_directory = "/";
         this->setDimensions(0, 0);
         this->_blocks.clear();
         std::cout << "FileSystem::reset" << std::endl;
@@ -378,21 +379,51 @@ namespace ModV6FileSystem
     void FileSystem::cpin(const std::string& outerFilename, const std::string& innerFilename)
     {
         std::cout << "Executing cpin " << outerFilename << " " << innerFilename << std::endl;
+        if(this->_fd == -1)
+        {
+            std::cout << "openfs has not been called successfully, aborting cpin" << std::endl;
+            return;
+        }
+        this->_blocks.clear();
     }
     void FileSystem::cpout(const std::string& innerFilename, const std::string& outerFilename)
     {
         std::cout << "Executing cpout " << innerFilename << " " << outerFilename << std::endl;
+        if(this->_fd == -1)
+        {
+            std::cout << "openfs has not been called successfully, aborting cpout" << std::endl;
+            return;
+        }
+        this->_blocks.clear();
     }
     void FileSystem::rm(const std::string& innerFilename)
     {
         std::cout << "Executing rm " << innerFilename << std::endl;
+        if(this->_fd == -1)
+        {
+            std::cout << "openfs has not been called successfully, aborting rm" << std::endl;
+            return;
+        }
+        this->_blocks.clear();
     }
     void FileSystem::mkdir(const std::string& innerFilename)
     {
         std::cout << "Executing mkdir " << innerFilename << std::endl;
+        if(this->_fd == -1)
+        {
+            std::cout << "openfs has not been called successfully, aborting mkdir" << std::endl;
+            return;
+        }
+        this->_blocks.clear();
     }
     void FileSystem::cd(const std::string& innerFilename)
     {
         std::cout << "Executing cd " << innerFilename << std::endl;
+        if(this->_fd == -1)
+        {
+            std::cout << "openfs has not been called successfully, aborting cd" << std::endl;
+            return;
+        }
+        this->_blocks.clear();
     }
 }

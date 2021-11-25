@@ -20,6 +20,7 @@ namespace ModV6FileSystem
     public:
         std::vector<std::weak_ptr<Block>> _blocks;
         int32_t _fd;
+        std::string _working_directory;
         uint32_t TOTAL_BLOCKS;
         uint32_t BOOT_INFO_BLOCKS;
         uint32_t SUPERBLOCK_BLOCKS;
