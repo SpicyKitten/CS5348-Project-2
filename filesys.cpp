@@ -49,8 +49,7 @@ namespace ModV6FileSystem
         }
         if(blockIdx >= this->TOTAL_BLOCKS && blockIdx > 1)
         {
-            std::cout << "Failed to retrieve block " << blockIdx << " which is out of bounds" << std::endl;
-            return std::shared_ptr<Block>{nullptr};
+            throw std::runtime_error("Failed to retrieve block " + std::to_string(blockIdx) + " which is out of bounds");
         }
         // std::vector<std::weak_ptr<Block>> iterator
         auto iter = this->_blocks.begin();
@@ -125,6 +124,9 @@ namespace ModV6FileSystem
                 + " as it is not a data block");
         }
         std::cout << "Free block " << blockIdx << std::endl;
+        std::shared_ptr<Block> block_ptr = this->getBlock(blockIdx);
+        std::array<uint32_t, 256>& intArray = block_ptr->asIntegers();
+        std::fill(intArray.begin(), intArray.end(), 0);
         auto freeArray = superblock_ptr->free();
         auto nfree = superblock_ptr->nfree();
         superblock_ptr->nfree(++nfree);
@@ -134,8 +136,6 @@ namespace ModV6FileSystem
         }
         else
         {
-            std::shared_ptr<Block> block_ptr = this->getBlock(blockIdx);
-            std::array<uint32_t, 256>& intArray = block_ptr->asIntegers();
             for(auto i = 0; i < 251; i++)
             {
                 intArray[i] = freeArray[i];
@@ -207,7 +207,7 @@ namespace ModV6FileSystem
         std::cout << "Data blocks start at: " << this->DATA_BLOCK_IDX << std::endl;
         for(int32_t i = DATA_BLOCKS - 1; i >= 0; i--)
         {
-            freeDataBlock(superblock_ptr, DATA_BLOCK_IDX + i);
+            this->freeDataBlock(superblock_ptr, DATA_BLOCK_IDX + i);
         }
     }
     void FileSystem::initializeINodes()
@@ -541,35 +541,170 @@ namespace ModV6FileSystem
         {
             throw std::runtime_error("I-node data not accessible if extended to "+ std::to_string(size) + " bytes!");
         }
+        std::cout << "Setting size of i-node to " << size << std::endl;
         auto old_size = inode_ptr->size();
         inode_ptr->size(size);
-        auto old_blocks = old_size / 1024;
-        auto blocks = size / 1024;
+        auto old_blocks = old_size / 1024 + (old_size != 0);
+        auto blocks = size / 1024 + (size != 0);
+        std::cout << "old_blocks=" << old_blocks << ", blocks=" << blocks << std::endl;
+        std::vector<std::vector<uint32_t>> levels = this->getBlocks(inode_ptr);
+        auto level = 0;
+        for(auto vec : levels)
+        {
+            std::cout << "Level" << ++level << ": size " << vec.size() << std::endl;
+            for(auto member : vec)
+            {
+                std::cout << member << ", ";
+            }
+            std::cout << std::endl;
+        }
+        std::shared_ptr<SuperBlock> superblock_ptr = this->getSuperBlock();
         if(blocks == old_blocks)
         {
             std::cout << "I-node contains the same number of blocks before and after!" << std::endl;
         }
-        else if(blocks <= 9)
+        else if(blocks == 0)
         {
-            std::cout << "Resizing to size: " << std::to_string(blocks) << " from size: " 
-                << std::to_string(old_blocks) << std::endl;
+            std::vector<std::vector<uint32_t>> blocks = this->getBlocks(inode_ptr);
+            for(auto vec : blocks)
+            {
+                for(auto block : vec)
+                {
+                    this->freeDataBlock(superblock_ptr, block);
+                }
+            }
         }
-        else if(blocks <= 2304)
+        else if(blocks > old_blocks)
         {
-            throw std::runtime_error("Medium blocks not yet supported");
+            auto added = blocks - old_blocks;
+            if(blocks < 9)
+            {
+                auto addr = inode_ptr->addr();
+                for(auto i = old_blocks; i < old_blocks + added; i++)
+                {
+                    std::cout << "adding i-node in spot " << i << std::endl;
+                    addr[i] = this->allocateDataBlock(superblock_ptr);
+                }
+                inode_ptr->addr(addr);
+                levels = this->getBlocks(inode_ptr);
+                level = 0;
+                for(auto vec : levels)
+                {
+                    std::cout << "Level" << ++level << ": size " << vec.size() << std::endl;
+                    for(auto member : vec)
+                    {
+                        std::cout << member << ", ";
+                    }
+                    std::cout << std::endl;
+                }
+            }
+            else if(blocks < 2304)
+            {
+                throw std::runtime_error("Medium blocks not yet supported");
+            }
+            else if(blocks < 589824)
+            {
+                throw std::runtime_error("Large blocks not yet supported");
+            }
+            else if(blocks < 150994944)
+            {
+                throw std::runtime_error("Massive blocks not yet supported");
+            }
+            else
+            {
+                throw std::runtime_error("Excessive size=" + std::to_string(blocks) +": this should never happen!");
+            }
         }
-        else if(blocks <= 589824)
+        else if(blocks < old_blocks)
         {
-            throw std::runtime_error("Large blocks not yet supported");
+            auto subtracted = old_blocks - blocks;
+            std::cout << "subtracted=" << subtracted << ", old_blocks=" << old_blocks << ", blocks=" << blocks
+                << std::endl;
+            if(blocks < 9)
+            {
+                auto addr = inode_ptr->addr();
+                for(auto i = old_blocks - subtracted; i < old_blocks; i++)
+                {
+                    std::cout << "removing i-node in spot " << i << std::endl;
+                    this->freeDataBlock(superblock_ptr, addr[i]);
+                    addr[i] = 0;
+                }
+                inode_ptr->addr(addr);
+            }
+            else if(blocks < 2304)
+            {
+                throw std::runtime_error("Medium blocks not yet supported");
+            }
+            else if(blocks < 589824)
+            {
+                throw std::runtime_error("Large blocks not yet supported");
+            }
+            else if(blocks < 150994944)
+            {
+                throw std::runtime_error("Massive blocks not yet supported");
+            }
+            else
+            {
+                throw std::runtime_error("Excessive size=" + std::to_string(blocks) +": this should never happen!");
+            }
         }
-        else if(blocks <= 150994944)
+    }
+    std::vector<std::vector<uint32_t>> FileSystem::getBlocks(std::shared_ptr<INode> inode_ptr)
+    {
+        std::array<uint32_t,9> addr = inode_ptr->addr();
+        std::vector<uint32_t> blocks{addr.begin(), addr.end()};
+        uint16_t depth = static_cast<uint16_t>(inode_ptr->filesize());
+        return this->getBlocks(blocks, depth);
+    }
+    std::vector<std::vector<uint32_t>> FileSystem::getBlocks(std::vector<uint32_t> blocks, uint16_t depth)
+    {
+        std::vector<std::vector<uint32_t>> result;
+        std::vector<uint32_t> top;
+        for(auto block : blocks)
         {
-            throw std::runtime_error("Massive blocks not yet supported");
+            if(block != 0)
+            {
+                top.push_back(block);
+            }
         }
-        else
+        result.push_back(top);
+        if(depth < 0)
         {
-            throw std::runtime_error("Excessive size=" + std::to_string(blocks) +": this should never happen!");
+            throw std::runtime_error("Depth of " + std::to_string(depth) + " is invalid!");
         }
+        if(depth != 0)
+        {
+            std::vector<std::vector<uint32_t>> levels;
+            for(uint32_t level = 0; level < depth; level++)
+            {
+                std::vector<uint32_t> blockIdxs;
+                levels.push_back(blockIdxs);
+            }
+            for(auto blockIdx : blocks)
+            {
+                if(blockIdx == 0)
+                {
+                    continue;
+                }
+                auto block_ptr = this->getBlock(blockIdx);
+                std::array<uint32_t, 256>& intArray = block_ptr->asIntegers();
+                std::vector<uint32_t> intermediate{intArray.begin(), intArray.end()};
+                // std::copy_n(intArray.begin(), 256, intermediate.begin());
+                std::vector<std::vector<uint32_t>> nextBlocks = this->getBlocks(intermediate, depth - 1);
+                for(uint32_t level = 0; level < depth; level++)
+                {
+                    for(auto nextBlockIdx : nextBlocks[level])
+                    {
+                        levels[level].push_back(nextBlockIdx);
+                    }
+                }
+            }
+            for(auto vec : levels)
+            {
+                result.push_back(vec);
+            }
+        }
+        return result;
     }
     void FileSystem::quit()
     {
@@ -816,5 +951,19 @@ namespace ModV6FileSystem
         std::cout << "  + ========  +-+ |  " << std::endl;
         std::cout << " _|--O========O~\\-+  " << std::endl;
         std::cout << "//// \\_/      \\_/    " << std::endl;
+    }
+    void FileSystem::test()
+    {
+        this->openfs("./fs");
+        this->initfs(100, 5);
+        for(auto i = 3; i <= 33; i++)
+        {
+            this->mkdir(std::to_string(i));
+        }
+        this->ls();
+        auto inode_ptr = this->getINode(0);
+        this->resizeINode(inode_ptr, 64);
+        this->ls();
+        this->quit();
     }
 }

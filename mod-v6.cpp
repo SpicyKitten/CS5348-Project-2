@@ -133,6 +133,10 @@ int main_(int argc, char* argv[])
 		{
 			fs->sl();
 		}
+		else if(expected(supported, command, "test", arguments, 0))
+		{
+			fs->test();
+		}
 		else if(expected(supported, command, "help", arguments, 0))
 		{
 			std::cout << "Supported commands:" << std::endl;

@@ -53,6 +53,8 @@ namespace ModV6FileSystem
         uint32_t createDirectory(std::string name, uint32_t parentIdx);
         std::shared_ptr<File> addFileToINode(std::shared_ptr<INode> inode_ptr);
         void resizeINode(std::shared_ptr<INode> inode_ptr, uint64_t size);
+        std::vector<std::vector<uint32_t>> getBlocks(std::shared_ptr<INode> inode_ptr);
+        std::vector<std::vector<uint32_t>> getBlocks(std::vector<uint32_t> blocks, uint16_t depth);
     public:
         FileSystem();
         ~FileSystem();
@@ -68,5 +70,6 @@ namespace ModV6FileSystem
         void pwd();
         void ls();
         void sl();
+        void test();
     };
 }
