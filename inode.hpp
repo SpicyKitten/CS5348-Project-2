@@ -41,13 +41,6 @@ namespace ModV6FileSystem
         INode(std::shared_ptr<Block> block_ptr, uint32_t offset);
         ~INode();
 
-        bool allocated() const;
-        void allocated(bool allocated);
-        FileType filetype() const;
-        void filetype(FileType filetype);
-        FileSize filesize() const;
-        void filesize(FileSize filesize);
-        
         uint16_t flags() const;
         void flags(uint16_t flags);
         uint16_t nlinks() const;
@@ -64,5 +57,35 @@ namespace ModV6FileSystem
         void actime(uint32_t actime);
         uint32_t modtime() const;
         void modtime(uint32_t modtime);
+        // methods for flags
+        // the name "set" here indicates that most of the time we just want to set/unset these bits
+        bool allocated() const;
+        void allocated(bool allocated);
+        FileType filetype() const;
+        void filetype(FileType filetype);
+        FileSize filesize() const;
+        void filesize(FileSize filesize);
+        bool setsUID() const;
+        void setsUID(bool set);
+        bool setsGID() const;
+        void setsGID(bool set);
+        bool ownerR() const;
+        void ownerR(bool set);
+        bool ownerW() const;
+        void ownerW(bool set);
+        bool ownerX() const;
+        void ownerX(bool set);
+        bool groupR() const;
+        void groupR(bool set);
+        bool groupW() const;
+        void groupW(bool set);
+        bool groupX() const;
+        void groupX(bool set);
+        bool worldR() const;
+        void worldR(bool set);
+        bool worldW() const;
+        void worldW(bool set);
+        bool worldX() const;
+        void worldX(bool set);
     };
 }

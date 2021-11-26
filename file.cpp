@@ -27,7 +27,7 @@ namespace ModV6FileSystem
     }
     File::~File()
     {
-        std::cout << "~File" << std::endl;
+        // std::cout << "~File" << std::endl;
     }
     uint32_t File::inode() const
     {
@@ -44,5 +44,23 @@ namespace ModV6FileSystem
     void File::filename(std::array<char, 28> filename)
     {
         std::copy(filename.begin(), filename.end(), this->_data.filename.begin());
+    }
+    std::string File::name() const
+    {
+        auto filename_chars = this->filename();
+        std::string filename{filename_chars.begin(), filename_chars.end()};
+        filename.erase(filename.find('\0'));
+        return filename;
+    }
+    void File::name(std::string filename)
+    {
+        if(filename.size() > 28 || filename.size() < 1)
+        {
+            throw std::invalid_argument("Filename \"" + filename + "\" is too short/long!");
+        }
+        std::array<char, 28> array;
+        std::fill(array.begin(), array.end(), 0);
+        std::copy(filename.begin(), filename.end(), array.begin());
+        this->filename(array);
     }
 }

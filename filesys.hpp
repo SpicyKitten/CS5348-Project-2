@@ -33,9 +33,9 @@ namespace ModV6FileSystem
         uint32_t OUT_OF_BOUNDS;
 
         void reset();
-        void setDimensions(uint32_t totalBlocks, uint32_t iNodeBlocks);
+        void setDimensions(uint32_t totalBlocks, uint32_t inodeBlocks);
         std::shared_ptr<Block> getBlock(uint32_t blockIdx);
-        std::shared_ptr<INode> getINode(uint32_t iNodeIdx);
+        std::shared_ptr<INode> getINode(uint32_t inodeIdx);
         std::array<std::shared_ptr<File>, 32> getFiles(uint32_t blockIdx);
         std::shared_ptr<SuperBlock> getSuperBlock();
         void freeDataBlock(std::shared_ptr<SuperBlock> superblock_ptr, uint32_t blockIdx);
@@ -44,23 +44,29 @@ namespace ModV6FileSystem
         void initializeFreeList(std::shared_ptr<SuperBlock> superblock_ptr);
         void initializeINodes();
         void initializeRoot();
-        std::array<char, 28> filenameToArray(std::string filename);
         std::string getExtendedFilename(std::string workingDirectory, std::string filename);
         std::vector<std::string> parseFilename(std::string filename);
         std::vector<uint32_t> getINodesForPath(std::vector<std::string> path);
         std::vector<uint32_t> getBlocksForINode(std::shared_ptr<INode> inode_ptr);
+        std::vector<std::shared_ptr<File>> getFilesForINode(std::shared_ptr<INode> inode_ptr);
+        std::string getWorkingDirectory(uint32_t inodeIdx);
+        uint32_t createDirectory(std::string name, uint32_t parentIdx);
+        std::shared_ptr<File> addFileToINode(std::shared_ptr<INode> inode_ptr);
+        void resizeINode(std::shared_ptr<INode> inode_ptr, uint64_t size);
     public:
         FileSystem();
         ~FileSystem();
         
         void quit();
         void openfs(const std::string& filename);
-        void initfs(uint32_t totalBlocks, uint32_t iNodeBlocks);
+        void initfs(uint32_t totalBlocks, uint32_t inodeBlocks);
         void cpin(const std::string& outerFilename, const std::string& innerFilename);
         void cpout(const std::string& innerFilename, const std::string& outerFilename);
         void rm(const std::string& innerFilename);
         void mkdir(const std::string& innerFilename);
         void cd(const std::string& innerFilename);
         void pwd();
+        void ls();
+        void sl();
     };
 }

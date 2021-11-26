@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <memory>
+#include <stdexcept>
 #include "block.hpp"
 
 namespace ModV6FileSystem
@@ -30,5 +31,7 @@ namespace ModV6FileSystem
         void inode(uint32_t inode);
         std::array<char, 28> filename() const;
         void filename(std::array<char, 28> filename);
+        std::string name() const;
+        void name(std::string filename);
     };
 }

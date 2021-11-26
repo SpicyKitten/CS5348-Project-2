@@ -11,7 +11,7 @@ namespace ModV6FileSystem
     {
         lseek(this->_fd, 1024 * this->_blockIdx, SEEK_SET);
         write(this->_fd, this->_data.bytes.data(), 1024);
-        std::cout << "~Block[" << this->_blockIdx << "]" << std::endl;
+        // std::cout << "~Block[" << this->_blockIdx << "]" << std::endl;
     }
     std::array<uint8_t, 1024>& Block::asBytes() const
     {

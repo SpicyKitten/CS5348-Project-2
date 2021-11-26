@@ -29,6 +29,8 @@
  * 
  * Be wary - bad things will happen if you openfs a file and don't initfs it
  * Make sure you have done initfs on the file system at least once before expecting anything else to work
+ * File consistency is not guaranteed once an exception has been thrown due to any reason.
+ * Only running initfs with valid parameters can guarantee that file consistency is restored.
  */
 namespace ModV6FileSystem
 {
@@ -54,7 +56,7 @@ namespace ModV6FileSystem
 	}
 }
 
-int main(int argc, char* argv[])
+int main_(int argc, char* argv[])
 {
 	// using ModV6FileSystem::ArgCheck::expected;
 	using namespace ModV6FileSystem;
@@ -123,6 +125,14 @@ int main(int argc, char* argv[])
 		{
 			fs->pwd();
 		}
+		else if(expected(supported, command, "ls", arguments, 0))
+		{
+			fs->ls();
+		}
+		else if(expected(supported, command, "sl", arguments, 0))
+		{
+			fs->sl();
+		}
 		else if(expected(supported, command, "help", arguments, 0))
 		{
 			std::cout << "Supported commands:" << std::endl;
@@ -175,4 +185,18 @@ int main(int argc, char* argv[])
 	// SuperBlock superblock{block};
 	// std::cout << "superblock isize=" << superblock.isize() << std::endl;
 	return 0;
+}
+
+int main(int argc, char* argv[])
+{
+	try
+	{
+		return main_(argc, argv);
+	}
+	catch(const std::exception& exc)
+	{
+		std::cerr << "Program terminated abnormally with exception:" << std::endl
+			<< exc.what() << std::endl;
+	}
+	return 1;
 }

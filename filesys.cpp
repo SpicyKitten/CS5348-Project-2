@@ -24,14 +24,14 @@ namespace ModV6FileSystem
         this->_blocks.clear();
         std::cout << "FileSystem::reset" << std::endl;
     }
-    void FileSystem::setDimensions(uint32_t totalBlocks, uint32_t iNodeBlocks)
+    void FileSystem::setDimensions(uint32_t totalBlocks, uint32_t inodeBlocks)
     {
-        std::cout << "Setting dimensions: [totalBlocks=" << totalBlocks << ", iNodeBlocks="
-            << iNodeBlocks << "]" << std::endl;
+        std::cout << "Setting dimensions: [totalBlocks=" << totalBlocks << ", inodeBlocks="
+            << inodeBlocks << "]" << std::endl;
         this->TOTAL_BLOCKS = totalBlocks;
         this->BOOT_INFO_BLOCKS = 1;
         this->SUPERBLOCK_BLOCKS = 1;
-        this->INODE_BLOCKS = iNodeBlocks;
+        this->INODE_BLOCKS = inodeBlocks;
         this->DATA_BLOCKS = TOTAL_BLOCKS - BOOT_INFO_BLOCKS - SUPERBLOCK_BLOCKS - INODE_BLOCKS;
         this->BOOT_INFO_BLOCK_IDX = 0;
         this->SUPERBLOCK_IDX = BOOT_INFO_BLOCK_IDX + BOOT_INFO_BLOCKS;
@@ -82,18 +82,18 @@ namespace ModV6FileSystem
         this->_blocks.push_back(weak_block_ptr);
         return block_ptr;
     }
-    std::shared_ptr<INode> FileSystem::getINode(uint32_t iNodeIdx)
+    std::shared_ptr<INode> FileSystem::getINode(uint32_t inodeIdx)
     {
         const auto INODES_PER_BLOCK = 1024 / 64;
-        if(iNodeIdx < 0 || iNodeIdx >= this->INODE_BLOCKS * INODES_PER_BLOCK)
+        if(inodeIdx < 0 || inodeIdx >= this->INODE_BLOCKS * INODES_PER_BLOCK)
         {
-            throw std::invalid_argument("Failed to retrieve INode " + std::to_string(iNodeIdx)
+            throw std::invalid_argument("Failed to retrieve i-node " + std::to_string(inodeIdx)
                 + " which is out of bounds");
         }
-        auto blockIdx = this->INODE_BLOCK_IDX + (iNodeIdx / INODES_PER_BLOCK);
-        auto offset = iNodeIdx % INODES_PER_BLOCK;
-        std::cout << "Fetching INode " << iNodeIdx << " from spot " << offset 
-            << " of block " << blockIdx << std::endl;
+        auto blockIdx = this->INODE_BLOCK_IDX + (inodeIdx / INODES_PER_BLOCK);
+        auto offset = inodeIdx % INODES_PER_BLOCK;
+        // std::cout << "Fetching i-node " << inodeIdx << " from spot " << offset 
+        //     << " of block " << blockIdx << std::endl;
         std::shared_ptr<Block> block_ptr = this->getBlock(blockIdx);
         std::shared_ptr<INode> inode_ptr{new INode(block_ptr, offset)};
         return inode_ptr;
@@ -221,10 +221,10 @@ namespace ModV6FileSystem
     }
     void FileSystem::initializeRoot()
     {
-        auto iNodeIdx = this->allocateINode();
-        std::shared_ptr<INode> inode_ptr = this->getINode(iNodeIdx);
-        std::cout << "Allocated INode " << iNodeIdx << " for root" << std::endl;
-        std::cout << "INode " << iNodeIdx << ": " << *inode_ptr << std::endl;
+        auto inodeIdx = this->allocateINode();
+        std::shared_ptr<INode> inode_ptr = this->getINode(inodeIdx);
+        std::cout << "Allocated i-node " << inodeIdx << " for root" << std::endl;
+        std::cout << "I-node " << inodeIdx << ": " << *inode_ptr << std::endl;
         // 1000000000000000 allocated flag
         // 0110000000000000 file type flag
         // 0001100000000000 file size flag
@@ -260,31 +260,16 @@ namespace ModV6FileSystem
         blocks[0] = blockIdx;
         inode_ptr->addr(blocks);
 
-        std::cout << "INode " << iNodeIdx << ": " << *inode_ptr << std::endl;
+        std::cout << "I-node " << inodeIdx << ": " << *inode_ptr << std::endl;
 
         std::array<std::shared_ptr<File>, 32> file_ptrs = this->getFiles(blockIdx);
         std::shared_ptr<File> self = file_ptrs[0];
-        self->inode(iNodeIdx);
-        self->filename(this->filenameToArray("."));
+        self->inode(inodeIdx);
+        self->name(".");
         std::shared_ptr<File> parent = file_ptrs[1];
-        parent->inode(iNodeIdx);
-        parent->filename(this->filenameToArray(".."));
+        parent->inode(inodeIdx);
+        parent->name("..");
         std::cout << "Allocated data block: " << blockIdx << std::endl;
-        for(std::shared_ptr<File> file_ptr : file_ptrs)
-        {
-            std::cout << "File for INode block: " << *file_ptr << std::endl;
-        }
-    }
-    std::array<char, 28> FileSystem::filenameToArray(std::string filename)
-    {
-        if(filename.size() > 28 || filename.size() < 1)
-        {
-            throw std::invalid_argument("Filename \"" + filename + "\" is too short/long!");
-        }
-        std::array<char, 28> array;
-        std::fill(array.begin(), array.end(), 0);
-        std::copy(filename.begin(), filename.end(), array.begin());
-        return array;
     }
     std::string FileSystem::getExtendedFilename(std::string workingDirectory, std::string filename)
     {
@@ -331,9 +316,9 @@ namespace ModV6FileSystem
         std::vector<uint32_t> result;
         uint32_t currentIdx = 0;
         std::shared_ptr<INode> inode_ptr;
+        result.push_back(currentIdx);
         for(auto element : path)
         {
-            result.push_back(currentIdx);
             if(element.size() > 0)
             {
                 inode_ptr = this->getINode(currentIdx);
@@ -343,25 +328,25 @@ namespace ModV6FileSystem
                 }
                 else if(inode_ptr->filetype() == FileType::DIRECTORY)
                 {
-                    std::vector<uint32_t> blockIdxs = this->getBlocksForINode(inode_ptr);
-                    for(auto blockIdx : blockIdxs)
+                    bool found_next = false;
+                    std::vector<std::shared_ptr<File>> files = this->getFilesForINode(inode_ptr);
+                    for(auto file_ptr : files)
                     {
-                        std::array<std::shared_ptr<File>, 32> files = this->getFiles(blockIdx);
-                        for(auto file_ptr : files)
+                        auto next_inode = file_ptr->inode();
+                        auto filename = file_ptr->name();
+                        std::cout << "Contains file: " << filename << std::endl;
+                        if(filename == element)
                         {
-                            auto filename_chars = file_ptr->filename();
-                            std::string filename{filename_chars.begin(), filename_chars.end()};
-                            // filename.erase(filename.find("\0"));
-                            std::cout << "filename=" << filename 
-                                << ", size=" << filename.size() 
-                                << ", index=" << filename.find('\0')
-                                << std::endl;
-                            std::cout << *file_ptr << std::endl;
-                            
-                            // std::cout << "Contains file: " << filename << std::endl;
+                            found_next = true;
+                            currentIdx = next_inode;
                         }
                     }
-                    std::cout << "INode: " << *inode_ptr << std::endl;
+                    if(!found_next)
+                    {
+                        break;
+                    }
+                    result.push_back(currentIdx);
+                    std::cout << "I-node: " << *inode_ptr << std::endl;
                 }
                 else
                 {
@@ -389,6 +374,202 @@ namespace ModV6FileSystem
             throw std::runtime_error("Medium/Large/Massive files in i-nodes not supported yet!");
         }
         return result;
+    }
+    std::vector<std::shared_ptr<File>> FileSystem::getFilesForINode(std::shared_ptr<INode> inode_ptr)
+    {
+        std::vector<std::shared_ptr<File>> files;
+        std::vector<uint32_t> blockIdxs = this->getBlocksForINode(inode_ptr);
+        for(auto blockIdx : blockIdxs)
+        {
+            std::array<std::shared_ptr<File>, 32> file_ptrs = this->getFiles(blockIdx);
+            for(auto file_ptr : file_ptrs)
+            {
+                auto inode = file_ptr->inode();
+                auto filename = file_ptr->name();
+                if(filename.size() > 0)
+                {
+                    files.push_back(file_ptr);
+                }
+                else if(filename.size() == 0 && inode != 0)
+                {
+                    throw std::runtime_error("Discovered anomalous file with i-node " + std::to_string(inode) +
+                        " and filename \'" + filename + "\'!");
+                }
+                else if(filename.size() < 0)
+                {
+                    throw std::runtime_error("Anomalous filename length for i-node " + std::to_string(inode) +
+                        " and filename \'" + filename + "\'!");
+                }
+            }
+        }
+        return files;
+    }
+    std::string FileSystem::getWorkingDirectory(uint32_t inodeIdx)
+    {
+        std::string pwd = "/";
+        auto inode_ptr = this->getINode(inodeIdx);
+        std::vector<std::shared_ptr<File>> parent_ptrs = this->getFilesForINode(inode_ptr);
+        while(inodeIdx != 0)
+        {
+            inode_ptr = this->getINode(inodeIdx);
+            std::vector<std::shared_ptr<File>> file_ptrs = parent_ptrs;
+            bool found = false;
+            for(auto file_ptr : file_ptrs)
+            {
+                if(file_ptr->name() == "..")
+                {
+                    found = true;
+                    auto parentIdx = file_ptr->inode();
+                    auto parent_inode_ptr = this->getINode(parentIdx);
+                    parent_ptrs = this->getFilesForINode(parent_inode_ptr);
+                    bool found_child = false;
+                    for(auto parent_file_ptr : parent_ptrs)
+                    {
+                        auto inode = parent_file_ptr->inode();
+                        auto name = parent_file_ptr->name();
+                        if(name != "." && name != ".." && inode == inodeIdx)
+                        {
+                            pwd = "/" + name + pwd;
+                            found_child = true;
+                            break;
+                        }
+                    }
+                    if(!found_child)
+                    {
+                        throw std::runtime_error("I-node " + std::to_string(inodeIdx) + " is not a child of its parent!");
+                    }
+                    inodeIdx = parentIdx;
+                    break;
+                }
+            }
+            if(!found)
+            {
+                throw std::runtime_error("I-node " + std::to_string(inodeIdx) + " has no parent!");
+            }
+        }
+        return pwd;
+    }
+    uint32_t FileSystem::createDirectory(std::string name, uint32_t parentIdx)
+    {
+        auto inodeIdx = this->allocateINode();
+        std::shared_ptr<INode> inode_ptr = this->getINode(inodeIdx);
+        std::cout << "Allocated i-node " << inodeIdx << std::endl;
+        // 1000000000000000 allocated flag
+        // 0110000000000000 file type flag
+        // 0001100000000000 file size flag
+        // 0000010000000000 set uid on execution flag
+        // 0000001000000000 set gid on execution flag
+        // 0000000111000000 rwx owner permissions flag
+        // 0000000000111000 rwx group permissions flag
+        // 0000000000000111 rxw world permissions flag
+        // 1                allocated
+        //  10              directory
+        //    00            small file
+        //      0           don't set uid on execution
+        //       0          don't set gid on execution
+        //        110       owner can read and write, but not execute
+        //           000    group has no permissions
+        //              000 world has no permissions
+        inode_ptr->allocated(true);
+        inode_ptr->filetype(FileType::DIRECTORY);
+        inode_ptr->filesize(FileSize::SMALL);
+        inode_ptr->setsUID(false);
+        inode_ptr->setsGID(false);
+        inode_ptr->ownerR(true);
+        inode_ptr->ownerW(true);
+        inode_ptr->ownerX(false);
+        inode_ptr->groupR(false);
+        inode_ptr->groupW(false);
+        inode_ptr->groupX(false);
+        inode_ptr->worldR(false);
+        inode_ptr->worldW(false);
+        inode_ptr->worldX(false);
+        // inode_ptr->flags(0b1100000110000000);
+        std::cout << "Current i-node contents: " << *inode_ptr << std::endl;
+        // the links are the parent link . and ..
+        inode_ptr->nlinks(3);
+        inode_ptr->uid(0);
+        inode_ptr->gid(0);
+        // 2 * file size
+        // We have 1 for . and 1 for ..
+        inode_ptr->size(2 * 32);
+        // inode.addr();
+        inode_ptr->actime(0);
+        inode_ptr->modtime(0);
+        
+        std::shared_ptr<SuperBlock> superblock_ptr = this->getSuperBlock();
+        auto blockIdx = this->allocateDataBlock(superblock_ptr);
+        // update allocated block for file
+        auto blocks = inode_ptr->addr();
+        blocks[0] = blockIdx;
+        inode_ptr->addr(blocks);
+
+        std::cout << "i-node " << inodeIdx << ": " << *inode_ptr << std::endl;
+
+        std::array<std::shared_ptr<File>, 32> file_ptrs = this->getFiles(blockIdx);
+        std::shared_ptr<File> self = file_ptrs[0];
+        self->inode(inodeIdx);
+        self->name(".");
+        std::shared_ptr<File> parent = file_ptrs[1];
+        parent->inode(parentIdx);
+        parent->name("..");
+        std::cout << "Allocated data block: " << blockIdx << std::endl;
+        auto parent_ptr = this->getINode(parentIdx);
+        std::shared_ptr<File> file_ptr = this->addFileToINode(parent_ptr);
+        file_ptr->inode(inodeIdx);
+        file_ptr->name(name);
+        return inodeIdx;
+    }
+    std::shared_ptr<File> FileSystem::addFileToINode(std::shared_ptr<INode> inode_ptr)
+    {
+        uint64_t size = inode_ptr->size();
+        if((size + 32) < size)
+        {
+            throw std::overflow_error("I-node size " + std::to_string(size) + " overflows if extended!");
+        }
+        auto FILES_PER_BLOCK = 1024 / 32;
+        this->resizeINode(inode_ptr, size + 32);
+        std::vector<uint32_t> blocks = this->getBlocksForINode(inode_ptr);
+        std::array<std::shared_ptr<File>, 32> files = this->getFiles(blocks.back());
+        auto offset = (inode_ptr->size() % 1024) / FILES_PER_BLOCK;
+        std::cout << "Offset of file in block is: " << std::to_string(offset) << std::endl;
+        return files[offset];
+    }
+    void FileSystem::resizeINode(std::shared_ptr<INode> inode_ptr, uint64_t size)
+    {
+        if(size > 154618822656ull)
+        {
+            throw std::runtime_error("I-node data not accessible if extended to "+ std::to_string(size) + " bytes!");
+        }
+        auto old_size = inode_ptr->size();
+        inode_ptr->size(size);
+        auto old_blocks = old_size / 1024;
+        auto blocks = size / 1024;
+        if(blocks == old_blocks)
+        {
+            std::cout << "I-node contains the same number of blocks before and after!" << std::endl;
+        }
+        else if(blocks <= 9)
+        {
+            std::cout << "Resizing to size: " << std::to_string(blocks) << " from size: " 
+                << std::to_string(old_blocks) << std::endl;
+        }
+        else if(blocks <= 2304)
+        {
+            throw std::runtime_error("Medium blocks not yet supported");
+        }
+        else if(blocks <= 589824)
+        {
+            throw std::runtime_error("Large blocks not yet supported");
+        }
+        else if(blocks <= 150994944)
+        {
+            throw std::runtime_error("Massive blocks not yet supported");
+        }
+        else
+        {
+            throw std::runtime_error("Excessive size=" + std::to_string(blocks) +": this should never happen!");
+        }
     }
     void FileSystem::quit()
     {
@@ -432,24 +613,24 @@ namespace ModV6FileSystem
         
         std::cout << "Obtained file descriptor: " << fd << std::endl;
     }
-    void FileSystem::initfs(uint32_t totalBlocks, uint32_t iNodeBlocks)
+    void FileSystem::initfs(uint32_t totalBlocks, uint32_t inodeBlocks)
     {
-        std::cout << "Executing initfs " << totalBlocks << " " << iNodeBlocks << std::endl;
+        std::cout << "Executing initfs " << totalBlocks << " " << inodeBlocks << std::endl;
         // flush blocks
         this->_blocks.clear();
         // total size = totalBlocks * block size = totalBlocks * 1024 bytes
         // i-nodes = 16 i-nodes per block
-        // total i-nodes = 16 * iNodeBlocks
+        // total i-nodes = 16 * inodeBlocks
         // block structure:
         // ______________________________________________________________________________________
         // | boot info | superblock | ... i-node blocks ... |        ... data blocks ...        |
-        // |     0     |     1      | 2 to iNodeBlocks + 1  | iNodeBlocks + 2 to totalBlocks - 1|
+        // |     0     |     1      | 2 to inodeBlocks + 1  | inodeBlocks + 2 to totalBlocks - 1|
         // ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄ ̄
         // 1024 bytes per block
         TOTAL_BLOCKS = totalBlocks;
         BOOT_INFO_BLOCKS = 1;
         SUPERBLOCK_BLOCKS = 1;
-        INODE_BLOCKS = iNodeBlocks;
+        INODE_BLOCKS = inodeBlocks;
         DATA_BLOCKS = TOTAL_BLOCKS - BOOT_INFO_BLOCKS - SUPERBLOCK_BLOCKS - INODE_BLOCKS;
         BOOT_INFO_BLOCK_IDX = 0;
         SUPERBLOCK_IDX = BOOT_INFO_BLOCK_IDX + BOOT_INFO_BLOCKS;
@@ -470,8 +651,9 @@ namespace ModV6FileSystem
             std::cout << "openfs has not been called successfully, aborting initfs" << std::endl;
             return;
         }
+        ftruncate(this->_fd, 0);
         ftruncate(this->_fd, TOTAL_BLOCKS * 1024);
-        this->setDimensions(totalBlocks, iNodeBlocks);
+        this->setDimensions(totalBlocks, inodeBlocks);
         std::shared_ptr<SuperBlock> superblock_ptr = this->getSuperBlock();
         superblock_ptr->isize(INODE_BLOCKS);
         superblock_ptr->fsize(TOTAL_BLOCKS);
@@ -524,6 +706,36 @@ namespace ModV6FileSystem
             std::cout << "openfs has not been called successfully, aborting mkdir" << std::endl;
             return;
         }
+        auto target = this->getExtendedFilename(this->_working_directory, innerFilename);
+        std::vector<std::string> path = this->parseFilename(target);
+        for(auto component : path)
+        {
+            std::cout << "Path component: " << component << std::endl;
+        }
+        std::vector<uint32_t> inodes = this->getINodesForPath(path);
+        for(auto inode : inodes)
+        {
+            std::cout << "I-nodes for path: " << std::to_string(inode) << std::endl;
+        }
+        if(path.size() == inodes.size())
+        {
+            std::cout << "Failed to make directory: something exists there already!" << std::endl;
+        }
+        else if(path.size() < inodes.size() - 1)
+        {
+            std::cout << "Failed to make directory: parent is not a directory or does not exist!" << std::endl;
+        }
+        else
+        {
+            std::cout << "Creating directory " << innerFilename << std::endl;
+            if(path.back() != "")
+            {
+                throw std::runtime_error("Path " + innerFilename + " was not parsed properly!");
+            }
+            path.pop_back();
+            auto inode = this->createDirectory(path.back(), inodes.back());
+            std::cout << "i-node for new directory: " << std::to_string(inode) << std::endl;
+        }
         this->_blocks.clear();
     }
     void FileSystem::cd(const std::string& innerFilename)
@@ -543,10 +755,25 @@ namespace ModV6FileSystem
         std::vector<uint32_t> inodes = this->getINodesForPath(path);
         for(auto inode : inodes)
         {
-            std::cout << "INodes for path: " << std::to_string(inode) << std::endl;
+            std::cout << "I-nodes for path: " << std::to_string(inode) << std::endl;
         }
-        std::cout << "Moving to directory: " << target << std::endl;
-        this->_working_directory = target;
+        if(path.size() == inodes.size())
+        {
+            auto inode_ptr = this->getINode(inodes.back());
+            if(inode_ptr->filetype() != FileType::DIRECTORY)
+            {
+                std::cout << "Failed to change directory: target is not a directory!" << std::endl;
+            }
+            else
+            {
+                this->_working_directory = this->getWorkingDirectory(inodes.back());
+                std::cout << "Moving to directory: " << this->_working_directory << std::endl;
+            }
+        }
+        else
+        {
+            std::cout << "Failed to change directory: target not found!" << std::endl;
+        }
         this->_blocks.clear();
     }
     void FileSystem::pwd()
@@ -558,5 +785,36 @@ namespace ModV6FileSystem
             return;
         }
         std::cout << this->_working_directory << std::endl;
+    }
+    void FileSystem::ls()
+    {
+        std::cout << "Executing ls" << std::endl;
+        if(this->_fd == -1)
+        {
+            std::cout << "openfs has not been called successfully, aborting ls" << std::endl;
+            return;
+        }
+        std::vector<uint32_t> inodes = this->getINodesForPath(this->parseFilename(this->_working_directory));
+        auto inodeIdx = inodes.back();
+        std::vector<std::shared_ptr<File>> file_ptrs = this->getFilesForINode(this->getINode(inodeIdx));
+        for(auto file_ptr : file_ptrs)
+        {
+            std::cout << file_ptr->name();
+            if(this->getINode(file_ptr->inode())->filetype() == FileType::DIRECTORY)
+            {
+                std::cout << "/";
+            }
+            std::cout << std::endl;
+        }
+    }
+    void FileSystem::sl()
+    {
+        std::cout << "Executing sl (steam locomotive)" << std::endl;
+        std::cout << "     ++      +------ " << std::endl;
+        std::cout << "     ||      |+-+ |  " << std::endl;
+        std::cout << "   /---------|| | |  " << std::endl;
+        std::cout << "  + ========  +-+ |  " << std::endl;
+        std::cout << " _|--O========O~\\-+  " << std::endl;
+        std::cout << "//// \\_/      \\_/    " << std::endl;
     }
 }

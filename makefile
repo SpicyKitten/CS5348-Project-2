@@ -13,7 +13,7 @@ all:	test
 test:	$(OBJS)
 	@$(CC) $(FLAGS) -o $(EXECUTABLE).exe $(OBJS)
 	@echo "Built executable. Running..."
-	@./$(EXECUTABLE).exe
+	@valgrind ./$(EXECUTABLE).exe
 	@$(MAKE) --no-print-directory -- --clean
 
 edit:
