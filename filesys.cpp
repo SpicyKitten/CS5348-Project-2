@@ -201,6 +201,19 @@ namespace ModV6FileSystem
         }
         throw std::runtime_error("Out of memory: cannot allocate any more i-nodes!");
     }
+    void FileSystem::freeINode(std::shared_ptr<INode> inode_ptr)
+    {
+        inode_ptr->flags(0);
+        inode_ptr->nlinks(0);
+        inode_ptr->uid(0);
+        inode_ptr->gid(0);
+        inode_ptr->size(0);
+        std::array<uint32_t, 9> addr = inode_ptr->addr();
+        std::fill(addr.begin(), addr.end(), 0);
+        inode_ptr->addr(addr);
+        inode_ptr->actime(0);
+        inode_ptr->modtime(0);
+    }
     void FileSystem::initializeFreeList(std::shared_ptr<SuperBlock> superblock_ptr)
     {
         std::cout << "Number of data blocks: " << this->DATA_BLOCKS << std::endl;
@@ -334,7 +347,6 @@ namespace ModV6FileSystem
                     {
                         auto next_inode = file_ptr->inode();
                         auto filename = file_ptr->name();
-                        std::cout << "Contains file: " << filename << std::endl;
                         if(filename == element)
                         {
                             found_next = true;
@@ -831,6 +843,73 @@ namespace ModV6FileSystem
             std::cout << "openfs has not been called successfully, aborting rm" << std::endl;
             return;
         }
+        auto target = this->getExtendedFilename(this->_working_directory, innerFilename);
+        std::vector<std::string> path = this->parseFilename(target);
+        for(auto component : path)
+        {
+            std::cout << "Path component: " << component << std::endl;
+        }
+        std::vector<uint32_t> inodes = this->getINodesForPath(path);
+        for(auto inode : inodes)
+        {
+            std::cout << "I-nodes for path: " << std::to_string(inode) << std::endl;
+        }
+        if(path.size() == inodes.size())
+        {
+            auto inodeIdx = inodes.back();
+            auto inode_ptr = this->getINode(inodeIdx);
+            if(inode_ptr->filetype() != FileType::REGULAR)
+            {
+                std::cout << "Failed to delete: target is not a regular file!" << std::endl;
+            }
+            else
+            {
+                inodes.pop_back();
+                auto parent_ptr = this->getINode(inodes.back());
+                this->resizeINode(inode_ptr, 0);
+                this->freeINode(inode_ptr);
+                std::vector<std::shared_ptr<File>> files = this->getFilesForINode(parent_ptr);
+                auto last_ptr = files.back();
+                if(last_ptr->inode() == inodeIdx)
+                {
+                    last_ptr->inode(0);
+                    std::array<char, 28> filename = last_ptr->filename();
+                    std::fill(filename.begin(), filename.end(), '\0');
+                    last_ptr->filename(filename);
+                    this->resizeINode(parent_ptr, parent_ptr->size() - 32);
+                }
+                else
+                {
+                    auto backup = last_ptr;
+                    bool found = false;
+                    for(auto file_ptr : files)
+                    {
+                        if(file_ptr->inode() == inodeIdx)
+                        {
+                            found = true;
+                            file_ptr->inode(last_ptr->inode());
+                            file_ptr->filename(last_ptr->filename());
+                            last_ptr->inode(0);
+                            std::array<char, 28> filename = last_ptr->filename();
+                            std::fill(filename.begin(), filename.end(), '\0');
+                            last_ptr->filename(filename);
+                            this->resizeINode(parent_ptr, parent_ptr->size() - 32);
+                            break;
+                        }
+                    }
+                    if(!found)
+                    {
+                        throw std::runtime_error("Could not find child in parent of file " + innerFilename + "!");
+                    }
+                }
+                std::vector<std::shared_ptr<File>> otherfiles;
+
+            }
+        }
+        else
+        {
+            std::cout << "Failed to remove " << innerFilename << " because target could not be located!" << std::endl;
+        }
         this->_blocks.clear();
     }
     void FileSystem::mkdir(const std::string& innerFilename)
@@ -955,14 +1034,19 @@ namespace ModV6FileSystem
     void FileSystem::test()
     {
         this->openfs("./fs");
-        this->initfs(100, 5);
+        this->initfs(100, 15);
         for(auto i = 3; i <= 33; i++)
         {
             this->mkdir(std::to_string(i));
         }
         this->ls();
-        auto inode_ptr = this->getINode(0);
-        this->resizeINode(inode_ptr, 64);
+        this->mkdir("level1");
+        this->ls();
+        this->cd("level1");
+        this->ls();
+        this->mkdir("level2");
+        this->mkdir("level3");
+        this->cd("/level1/level2/../level3");
         this->ls();
         this->quit();
     }

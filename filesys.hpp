@@ -40,6 +40,7 @@ namespace ModV6FileSystem
         std::shared_ptr<SuperBlock> getSuperBlock();
         void freeDataBlock(std::shared_ptr<SuperBlock> superblock_ptr, uint32_t blockIdx);
         uint32_t allocateDataBlock(std::shared_ptr<SuperBlock> superblock_ptr);
+        void freeINode(std::shared_ptr<INode> inode_ptr);
         uint32_t allocateINode();
         void initializeFreeList(std::shared_ptr<SuperBlock> superblock_ptr);
         void initializeINodes();
