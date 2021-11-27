@@ -466,22 +466,6 @@ namespace ModV6FileSystem
         auto inodeIdx = this->allocateINode();
         std::shared_ptr<INode> inode_ptr = this->getINode(inodeIdx);
         std::cout << "Allocated i-node " << inodeIdx << std::endl;
-        // 1000000000000000 allocated flag
-        // 0110000000000000 file type flag
-        // 0001100000000000 file size flag
-        // 0000010000000000 set uid on execution flag
-        // 0000001000000000 set gid on execution flag
-        // 0000000111000000 rwx owner permissions flag
-        // 0000000000111000 rwx group permissions flag
-        // 0000000000000111 rxw world permissions flag
-        // 1                allocated
-        //  10              directory
-        //    00            small file
-        //      0           don't set uid on execution
-        //       0          don't set gid on execution
-        //        110       owner can read and write, but not execute
-        //           000    group has no permissions
-        //              000 world has no permissions
         inode_ptr->allocated(true);
         inode_ptr->filetype(FileType::DIRECTORY);
         inode_ptr->filesize(FileSize::SMALL);
@@ -526,6 +510,27 @@ namespace ModV6FileSystem
         parent->inode(parentIdx);
         parent->name("..");
         std::cout << "Allocated data block: " << blockIdx << std::endl;
+        auto parent_ptr = this->getINode(parentIdx);
+        std::shared_ptr<File> file_ptr = this->addFileToINode(parent_ptr);
+        file_ptr->inode(inodeIdx);
+        file_ptr->name(name);
+        return inodeIdx;
+    }
+    uint32_t FileSystem::createFile(std::string name, uint32_t parentIdx)
+    {
+        auto inodeIdx = this->allocateINode();
+        auto inode_ptr = this->getINode(inodeIdx);
+        inode_ptr->flags(0);
+        inode_ptr->allocated(true);
+        inode_ptr->nlinks(1);
+        inode_ptr->uid(0);
+        inode_ptr->gid(0);
+        inode_ptr->size(0);
+        inode_ptr->actime(0);
+        inode_ptr->modtime(0);
+        inode_ptr->ownerR(true);
+        inode_ptr->ownerW(true);
+
         auto parent_ptr = this->getINode(parentIdx);
         std::shared_ptr<File> file_ptr = this->addFileToINode(parent_ptr);
         file_ptr->inode(inodeIdx);
@@ -718,6 +723,21 @@ namespace ModV6FileSystem
         }
         return result;
     }
+    std::shared_ptr<Block> FileSystem::getBlockForAddress(std::shared_ptr<INode> inode_ptr, uint64_t address)
+    {
+        if(inode_ptr->filesize() == FileSize::SMALL)
+        {
+            auto addr = inode_ptr->addr();
+            auto blockIdx = addr[address/1024];
+            std::cout << "Fetching block " << blockIdx << std::endl;
+            std::cout << std::to_string(this->getBlock(blockIdx)->asBytes()[0]) << std::endl;
+            return this->getBlock(blockIdx);
+        }
+        else
+        {
+            throw std::runtime_error("Medium/Large/Massive files in i-nodes not supported yet!");
+        }
+    }
     void FileSystem::quit()
     {
         std::cout << "mod-v6 file system shutting down gracefully" << std::endl;
@@ -823,7 +843,77 @@ namespace ModV6FileSystem
             std::cout << "openfs has not been called successfully, aborting cpin" << std::endl;
             return;
         }
+        auto fd = open(outerFilename.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+        auto accessible = fd != -1;
+        auto exists = access(outerFilename.c_str(), F_OK) != -1;
+        if(!exists)
+        {
+            throw std::runtime_error("File " + outerFilename + " does not exist!");
+        }
+        else if(!accessible)
+        {
+            throw std::runtime_error("Could not access file " + outerFilename + "!");
+        }
+
+        auto target = this->getExtendedFilename(this->_working_directory, innerFilename);
+        std::vector<std::string> path = this->parseFilename(target);
+        for(auto component : path)
+        {
+            std::cout << "Path component: " << component << std::endl;
+        }
+        std::vector<uint32_t> inodes = this->getINodesForPath(path);
+        for(auto inode : inodes)
+        {
+            std::cout << "I-nodes for path: " << std::to_string(inode) << std::endl;
+        }
+        if(path.size() == inodes.size())
+        {
+            std::cout << "Failed to copy in: something exists there already!" << std::endl;
+        }
+        else if(path.size() < inodes.size() - 1)
+        {
+            std::cout << "Failed to copy in: parent is not a directory or does not exist!" << std::endl;
+        }
+        else
+        {
+            std::cout << "Creating directory " << innerFilename << std::endl;
+            if(path.back() != "")
+            {
+                throw std::runtime_error("Path " + innerFilename + " was not parsed properly!");
+            }
+            path.pop_back();
+            auto inodeIdx = this->createFile(path.back(), inodes.back());
+            std::cout << "i-node for new directory: " << std::to_string(inodeIdx) << std::endl;
+            auto bytes_read = 1024;
+            char data_buffer[1024] = {0};
+            auto address = 0;
+            auto inode_ptr = this->getINode(inodeIdx);
+            while(bytes_read == 1024)
+            {
+                bytes_read = read(fd, &data_buffer, 1024);
+                if(bytes_read == 0)
+                {
+                    break;
+                }
+                this->resizeINode(inode_ptr, inode_ptr->size() + bytes_read);
+                auto block_ptr = this->getBlockForAddress(inode_ptr, address);
+                std::cout << "[cpin]Writing to block " << block_ptr->index() << std::endl;
+                address += bytes_read;
+                std::array<uint8_t, 1024>& block_data = block_ptr->asBytes();
+                for(auto idx = 0; idx < address; ++idx)
+                {
+                    block_data[idx] = data_buffer[idx];
+                    std::cout << block_data[idx] << ", " << std::endl;
+                }
+                for(auto idx = address; idx < 1024; ++idx)
+                {
+                    block_data[idx] = 0;
+                }
+            }
+        }
+        std::cout << std::to_string(this->getBlock(18)->asBytes()[1023]) << std::endl;
         this->_blocks.clear();
+        std::cout << std::to_string(this->getBlock(18)->asBytes()[0]) << std::endl;
     }
     void FileSystem::cpout(const std::string& innerFilename, const std::string& outerFilename)
     {
@@ -832,6 +922,67 @@ namespace ModV6FileSystem
         {
             std::cout << "openfs has not been called successfully, aborting cpout" << std::endl;
             return;
+        }
+        auto target = this->getExtendedFilename(this->_working_directory, innerFilename);
+        std::vector<std::string> path = this->parseFilename(target);
+        for(auto component : path)
+        {
+            std::cout << "Path component: " << component << std::endl;
+        }
+        std::vector<uint32_t> inodes = this->getINodesForPath(path);
+        for(auto inode : inodes)
+        {
+            std::cout << "I-nodes for path: " << std::to_string(inode) << std::endl;
+        }
+        if(path.size() == inodes.size())
+        {
+            auto inode_ptr = this->getINode(inodes.back());
+            if(!inode_ptr->allocated())
+            {
+                throw std::runtime_error("Tried to access deallocated i-node for file " + innerFilename + "!");
+            }
+            if(inode_ptr->filetype() != FileType::REGULAR)
+            {
+                std::cout << "Failed to copy out: source is not a regular file!" << std::endl;
+            }
+            else
+            {
+                auto fd = open(outerFilename.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+                auto accessible = fd != -1;
+                auto exists = access(outerFilename.c_str(), F_OK) != -1;
+                if(!exists)
+                {
+                    throw std::runtime_error("File " + outerFilename + " does not exist!");
+                }
+                else if(!accessible)
+                {
+                    throw std::runtime_error("Could not access file " + outerFilename + "!");
+                }
+                auto size = inode_ptr->size();
+                std::cout << "file size is: " << size << " bytes" << std::endl;
+                char buffer[1024] = {0};
+                ftruncate(fd, 1024 * (1 + size / 1024));
+                for(uint64_t address = 0; address < size; address += 1024)
+                {
+                    std::shared_ptr<Block> block_ptr = this->getBlockForAddress(inode_ptr, address);
+                    std::array<uint8_t, 1024>& bytes = block_ptr->asBytes();
+                    for(auto i = 0; i < 1024; ++i)
+                    {
+                        if(bytes[i] != 0)
+                        {
+                            std::cout << "Writing byte: " << bytes[i] << std::endl;
+                        }
+                        buffer[i] = bytes[i];
+                    }
+                    lseek(fd, address, SEEK_SET);
+                    write(fd, &buffer, 1024);
+                }
+                ftruncate(fd, inode_ptr->size());
+            }
+        }
+        else
+        {
+            std::cout << "Failed to copy out: source not found!" << std::endl;
         }
         this->_blocks.clear();
     }
@@ -1047,6 +1198,12 @@ namespace ModV6FileSystem
         this->mkdir("level2");
         this->mkdir("level3");
         this->cd("/level1/level2/../level3");
+        this->ls();
+        this->cpin("./abc123_in.txt", "/level1/level3/abc123_v6");
+        this->ls();
+        this->cpout("/level1/level3/abc123_v6", "./abc123_out.txt");
+        this->ls();
+        this->rm("abc123_v6");
         this->ls();
         this->quit();
     }

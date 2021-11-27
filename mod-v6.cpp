@@ -12,19 +12,18 @@
 /**
  * Group members:
  * Avilash Rath (asr210008)
- * 		Contributions: Programming
+ * 		Contributions: Programming mkdir, cd, rm, q, planning
  * Sai Tatireddy (sxt190086)
- * 		Contributions: Planning + Initializing free linked list
+ * 		Contributions: Programming cpin, cpout, planning
  * Haowei Liu (hxl210017)
- * 		Contributions: Planning
+ * 		Contributions: No contribution
  * 
  * How to run our code:
  * 		unzip whatever needs to be unzipped
  * 		put it all in a directory
  * 		cd into the directory from the command line
  * 		run the command "make clean test"
- * 		input openfs 	command such as >openfs ./fs
- * 		input initfs 	command such as >initfs 1000 100
+ * 		input test 		command such as >test
  * 		input q 		command such as >q
  * 
  * Be wary - bad things will happen if you openfs a file and don't initfs it

@@ -52,10 +52,12 @@ namespace ModV6FileSystem
         std::vector<std::shared_ptr<File>> getFilesForINode(std::shared_ptr<INode> inode_ptr);
         std::string getWorkingDirectory(uint32_t inodeIdx);
         uint32_t createDirectory(std::string name, uint32_t parentIdx);
+        uint32_t createFile(std::string name, uint32_t parentIdx);
         std::shared_ptr<File> addFileToINode(std::shared_ptr<INode> inode_ptr);
         void resizeINode(std::shared_ptr<INode> inode_ptr, uint64_t size);
         std::vector<std::vector<uint32_t>> getBlocks(std::shared_ptr<INode> inode_ptr);
         std::vector<std::vector<uint32_t>> getBlocks(std::vector<uint32_t> blocks, uint16_t depth);
+        std::shared_ptr<Block> getBlockForAddress(std::shared_ptr<INode> inode_ptr, uint64_t address);
     public:
         FileSystem();
         ~FileSystem();
