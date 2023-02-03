@@ -3,6 +3,7 @@ Run with "make clean test"
 Delete executable produced with "make clean"
 
 A pretty neat way to handle resizing a file of blocks which unfortunately we didn't have enough time to implement in the codebase. It goes something like this:
+```C++
 // blockSize is in bytes, describing the range of addresses for the block
 // call with root block index, begin address of root block, final address reachable from root block 
 // 		if all child blocks filled, desired new size of block, and block size of root block 
@@ -67,3 +68,4 @@ for(auto i = 0; i < 9; ++i)
     addr[i] = this->resize(addr[i], blockSize * i, blockSize * (i + 1) - 1, newsize, blockSize)
 }
 inode_ptr->addr(addr)
+```
